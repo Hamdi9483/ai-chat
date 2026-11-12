@@ -16,7 +16,7 @@ body{font-family:'Segoe UI','Noto Sans Arabic',system-ui,sans-serif;background:v
 .sidebar{width:260px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:transform .3s,margin-right .3s;flex-shrink:0}
 .sidebar.hidden{margin-right:-260px}
 .sidebar-header{padding:16px}
-.new-chat-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;font-family:inherit;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.new-chat-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;font-family:inherit;transition:background .2s}
 .new-chat-btn:hover{background:var(--accent2)}
 .chat-list{flex:1;overflow-y:auto;padding:8px}
 .chat-item{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .15s}
@@ -111,16 +111,16 @@ dialog h2{margin-bottom:16px;font-size:20px}
       <textarea id="input" rows="1" placeholder="اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
       <button type="submit" class="send-btn" id="sendBtn">➤</button>
     </form>
-    <div class="footer-note">مدعوم بـ OpenRouter • قد تحتاج لتفعيل VPN/بروكسي حسب موقعك</div>
+    <div class="footer-note">مدعوم بـ OpenRouter عبر Cloudflare Worker</div>
   </div>
 </main>
 
 <dialog id="settingsDialog">
   <h2>⚙️ الإعدادات</h2>
   <div class="dialog-field">
-    <label for="apiKeyInput">مفتاح OpenRouter API</label>
-    <input type="password" id="apiKeyInput" placeholder="sk-or-v1-...">
-    <div class="dialog-hint">احصل على مفتاح مجاني من <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a>. يُحفظ في متصفحك فقط.</div>
+    <label for="backendUrlInput">رابط الخادم الوسيط (Worker URL)</label>
+    <input type="url" id="backendUrlInput" placeholder="https://your-worker.workers.dev">
+    <div class="dialog-hint">الصق رابط الـ Worker الذي نشرته على Cloudflare. يبدأ عادةً بـ https://</div>
   </div>
   <div class="dialog-actions">
     <button class="btn btn-primary" id="saveSettings">حفظ</button>
@@ -129,6 +129,12 @@ dialog h2{margin-bottom:16px;font-size:20px}
 </dialog>
 
 <script>
+// ============================================================
+// 🔧 الإعداد الأساسي - عدّل هذا السطر فقط بعد نشر الـ Worker
+// ============================================================
+const BACKEND_URL = "";  // الصق رابط الـ Worker هنا، مثال: "https://my-worker.username.workers.dev"
+// ============================================================
+
 const FREE_MODELS = [
   {id:'meta-llama/llama-3.3-70b-instruct:free', name:'Llama 3.3 70B (موصى به)'},
   {id:'meta-llama/llama-3.1-8b-instruct:free', name:'Llama 3.1 8B'},
@@ -140,7 +146,7 @@ const FREE_MODELS = [
 const DEFAULT_MODEL = FREE_MODELS[0].id;
 
 const state = {
-  apiKey: localStorage.getItem('or_api_key') || '',
+  backendUrl: localStorage.getItem('or_backend_url') || BACKEND_URL,
   model: localStorage.getItem('or_model') || DEFAULT_MODEL,
   chats: JSON.parse(localStorage.getItem('or_chats') || '[]'),
   activeChatId: localStorage.getItem('or_active_chat') || null,
@@ -168,7 +174,7 @@ function saveState(){
   localStorage.setItem('or_chats',JSON.stringify(state.chats));
   localStorage.setItem('or_active_chat',state.activeChatId||'');
   localStorage.setItem('or_model',state.model);
-  localStorage.setItem('or_api_key',state.apiKey);
+  localStorage.setItem('or_backend_url',state.backendUrl);
   localStorage.setItem('or_theme',state.theme);
 }
 function getActiveChat(){return state.chats.find(c=>c.id===state.activeChatId)}
@@ -274,7 +280,7 @@ function deleteChat(id){
 async function handleSend(){
   const text=inputEl.value.trim();
   if(!text||state.isGenerating) return;
-  if(!state.apiKey){openSettings();return}
+  if(!state.backendUrl){openSettings();return}
 
   const chat=ensureActiveChat();
   inputEl.value='';autoResize();
@@ -307,32 +313,25 @@ async function handleSend(){
   let fullResponse='';
 
   try{
-    const response=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+    const response=await fetch(state.backendUrl,{
       method:'POST',
-      headers:{
-        'Authorization':`Bearer ${state.apiKey}`,
-        'Content-Type':'application/json',
-        'HTTP-Referer':location.origin||'https://localhost',
-        'X-Title':'Chat App',
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:state.model,messages:apiMessages,stream:true}),
     });
 
     if(!response.ok){
       const errText=await response.text();
       let errMsg=`HTTP ${response.status}`;
-      try{const j=JSON.parse(errText);errMsg=j.error?.message||errMsg}
+      try{const j=JSON.parse(errText);errMsg=j.error?.message||j.message||errMsg}
       catch(e){
         if(errText.startsWith('<')){
-          errMsg=response.status===404
-            ? 'الطلب لم يصل إلى OpenRouter (تحقق من الإنترنت أو البروكسي). صفحة 404 وصلت بدلاً من JSON.'
-            : `الخادم أعاد صفحة HTML بدلاً من JSON (HTTP ${response.status}). السبب الأرجح: بروكسي/شبكة تعترض الطلب.`;
+          errMsg=`الخادم الوسيط أعاد صفحة HTML بدلاً من JSON (HTTP ${response.status}). تحقق من صحة رابط الـ Worker وأنه منشور.`;
         }
       }
       throw new Error(errMsg);
     }
 
-    if(!response.body) throw new Error('متصفحك لا يدعم Streaming. استخدم Chrome/Edge حديثاً.');
+    if(!response.body) throw new Error('المتصفح لا يدعم Streaming. استخدم Chrome/Edge حديثاً.');
 
     const reader=response.body.getReader();
     const decoder=new TextDecoder();
@@ -381,10 +380,12 @@ async function handleSend(){
   }
 }
 
-function openSettings(){$('apiKeyInput').value=state.apiKey;settingsDialog.showModal()}
+function openSettings(){$('backendUrlInput').value=state.backendUrl;settingsDialog.showModal()}
 function saveSettings(){
-  state.apiKey=$('apiKeyInput').value.trim();saveState();settingsDialog.close();
-  if(state.apiKey && getActiveChat()?.messages.length===0) renderMessages();
+  let url=$('backendUrlInput').value.trim();
+  if(url && !url.startsWith('http')) url='https://'+url;
+  state.backendUrl=url;saveState();settingsDialog.close();
+  if(state.backendUrl && getActiveChat()?.messages.length===0) renderMessages();
 }
 function autoResize(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,200)+'px'}
 
@@ -407,7 +408,7 @@ function init(){
   });
 
   if(window.innerWidth>768) sidebar.classList.remove('hidden');
-  if(!state.apiKey) setTimeout(openSettings,400);
+  if(!state.backendUrl) setTimeout(openSettings,400);
   inputEl.focus();
 }
 init();
