@@ -129,21 +129,11 @@ dialog h2{margin-bottom:16px;font-size:20px}
 </dialog>
 
 <script>
-// ============================================================
-// 🔧 الإعداد الأساسي - عدّل هذا السطر فقط بعد نشر الـ Worker
-// ============================================================
-const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";  // الصق رابط الـ Worker هنا، مثال: "https://my-worker.username.workers.dev"
-// ============================================================
+const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
 
-const FREE_MODELS = [
-  {id:'meta-llama/llama-3.3-70b-instruct:free', name:'Llama 3.3 70B (موصى به)'},
-  {id:'meta-llama/llama-3.1-8b-instruct:free', name:'Llama 3.1 8B'},
-  {id:'google/gemma-2-9b-it:free', name:'Gemma 2 9B'},
-  {id:'mistralai/mistral-7b-instruct:free', name:'Mistral 7B'},
-  {id:'qwen/qwen-2.5-72b-instruct:free', name:'Qwen 2.5 72B'},
-  {id:'deepseek/deepseek-r1:free', name:'DeepSeek R1'},
-];
-const DEFAULT_MODEL = FREE_MODELS[0].id;
+// القائمة الثابتة لم تعد مستخدمة، لكننا نبقيها فارغة للتوافق مع أي كود قديم.
+const FREE_MODELS = [];
+const DEFAULT_MODEL = 'openrouter/free';
 
 const state = {
   backendUrl: localStorage.getItem('or_backend_url') || BACKEND_URL,
@@ -187,16 +177,47 @@ function applyTheme(){
   document.body.classList.toggle('light',state.theme==='light');
   $('themeBtn').textContent = state.theme==='light'?'🌞':'🌙';
 }
-function renderModelSelect(){
-  modelSelect.innerHTML='';
-  for(const m of FREE_MODELS){
-    const o=document.createElement('option');o.value=m.id;o.textContent=m.name;modelSelect.appendChild(o);
+
+// ============================================================
+// 🆕 الدالة المعدلة: جلب النماذج المجانية ديناميكياً
+// ============================================================
+async function renderModelSelect() {
+  modelSelect.innerHTML = '<option value="openrouter/free">تلقائي (Free Router - موصى به)</option>';
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // تصفية النماذج التي يكون سعر الإدخال والإخراج فيها صفراً[reference:3]
+    const freeModels = (data.data || []).filter(m => {
+      const p = m.pricing || {};
+      return String(p.prompt) === '0' && String(p.completion) === '0';
+    });
+
+    for (const m of freeModels) {
+      if (m.id === 'openrouter/free') continue;
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name || m.id;
+      modelSelect.appendChild(opt);
+    }
+  } catch (e) {
+    console.warn('تعذر تحميل قائمة النماذج المجانية، سيتم استخدام openrouter/free فقط.', e);
   }
-  if(!FREE_MODELS.find(m=>m.id===state.model)){
-    const o=document.createElement('option');o.value=state.model;o.textContent=state.model;modelSelect.appendChild(o);
+
+  // ضمان أن النموذج المحدد موجود في القائمة
+  if (modelSelect.querySelector(`option[value="${CSS.escape(state.model)}"]`)) {
+    modelSelect.value = state.model;
+  } else {
+    modelSelect.value = 'openrouter/free';
+    state.model = 'openrouter/free';
+    saveState();
   }
-  modelSelect.value=state.model;
 }
+
 function renderChatList(){
   chatListEl.innerHTML='';
   if(!state.chats.length){
@@ -389,8 +410,10 @@ function saveSettings(){
 }
 function autoResize(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,200)+'px'}
 
-function init(){
-  applyTheme();renderModelSelect();renderChatList();
+async function init(){
+  applyTheme();
+  await renderModelSelect(); // انتظر تحميل النماذج المجانية
+  renderChatList();
   if(!state.activeChatId && state.chats.length) state.activeChatId=state.chats[0].id;
   renderMessages();
 
