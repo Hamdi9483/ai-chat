@@ -156,9 +156,8 @@ dialog h2{margin-bottom:16px;font-size:20px}
 <script>
 const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
 
-// مسارات الصور — عدّلها إن احتجت
-const AGENT_IMAGE = "assets/me.jpeg";   // صورة الوكيل الذكي (تظهر مكان 🤖)
-const USER_IMAGE  = "assets/user.png";  // صورة المستخدم (اختياري، بديلها 👤)
+const AGENT_IMAGE = "assets/me.jpeg";   
+const USER_IMAGE  = "assets/user.png";  
 
 const FREE_MODELS = [];
 const DEFAULT_MODEL = 'openrouter/free';
@@ -253,9 +252,6 @@ function renderChatList(){
   }
 }
 
-// ============================================================
-// 🆕 عرض الصور بدلاً من الإيموجي
-// ============================================================
 function createMessageEl(role){
   const d=document.createElement('div');
   d.className='message '+role;
@@ -284,6 +280,86 @@ function postProcessCode(container){
   });
   container.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b)}catch(e){}});
 }
+
+// دالة تحليل النص وعرض تقرير وقود القيود المحاسبية مع أزرار الاعتماد
+function parseAndRenderProposal(assistantContentElement, textContent){
+  const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```/);
+  
+  if (jsonMatch) {
+    try {
+      const proposal = JSON.parse(jsonMatch[1]);
+      if (proposal.action === 'propose_entry') {
+        const cleanText = textContent.replace(jsonMatch[0], '');
+        assistantContentElement.innerHTML = renderMarkdown(cleanText);
+
+        const proposalBox = document.createElement('div');
+        proposalBox.className = 'bg-slate-900 border border-emerald-500/50 p-4 rounded-xl mt-4 text-sm shadow-lg';
+        proposalBox.style.background = '#16161f';
+        proposalBox.style.border = '1px solid #10b981';
+        proposalBox.style.padding = '14px';
+        proposalBox.style.borderRadius = '10px';
+        proposalBox.style.marginTop = '12px';
+
+        proposalBox.innerHTML = `
+          <div style="font-weight:700;color:#34d399;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <span>📋</span> تقرير اقتراح قيد محاسبي (جاهز للترحيل):
+          </div>
+          <div style="color:#d1d5db;font-size:13px;background:#0f0f14;padding:10px;border-radius:8px;margin-bottom:12px;line-height:1.6;">
+            <div><strong>البيان:</strong> ${escapeHtml(proposal.description)}</div>
+            <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)}</div>
+            <div style="margin-top:6px;font-weight:600;color:#34d399;">تفاصيل الحركات (مدين / دائن):</div>
+            ${proposal.lines.map(l => `
+              <div style="display:flex;justify-content:between;border-bottom:1px solid #2a2a3a;padding:4px 0;">
+                <span>حساب: ${escapeHtml(l.account_code)} | البيان: ${escapeHtml(l.description||'')}</span>
+                <span>مدين: ${l.debit} | دائن: ${l.credit}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="approve-entry-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">
+              موافق وترحيل إلى Supabase ✓
+            </button>
+            <button id="reject-entry-btn" style="background:rgba(255,85,102,0.2);color:#ff5566;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;">
+              رفض وإلغاء ✕
+            </button>
+          </div>
+        `;
+
+        proposalBox.querySelector('#approve-entry-btn').addEventListener('click', async (e) => {
+          const btn = e.target;
+          btn.disabled = true;
+          btn.textContent = 'جارٍ الترحيل لقاعدة البيانات...';
+
+          try {
+            const res = await fetch(`${state.backendUrl}/save-entry`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(proposal)
+            });
+
+            const result = await res.json();
+            if (res.ok && result.success) {
+              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ تم اعتماد القيد بنجاح وترحيله إلى جدول journal_entries برقم مرجعي: #${result.entry_id}</div>`;
+            } else {
+              throw new Error(result.error || 'خطأ غير معروف أثناء الحفظ');
+            }
+          } catch (err) {
+            proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;padding:8px;background:rgba(255,85,102,0.1);border-radius:6px;">⚠️ فشل الترحيل: ${err.message}</div>`;
+          }
+        });
+
+        proposalBox.querySelector('#reject-entry-btn').addEventListener('click', () => {
+          proposalBox.innerHTML = `<div style="color:#9191a8;font-size:13px;font-style:italic;">❌ تم رفض القيد ولم يتم حفظه في قاعدة البيانات.</div>`;
+        });
+
+        assistantContentElement.appendChild(proposalBox);
+      }
+    } catch (e) {
+      console.warn('خطأ في تحليل قيد الـ JSON المقترح:', e);
+    }
+  }
+}
+
 function renderMessages(){
   messagesEl.innerHTML='';
   const chat=getActiveChat();
@@ -291,16 +367,19 @@ function renderMessages(){
   for(const msg of chat.messages){
     const el=createMessageEl(msg.role);
     const content=el.querySelector('.message-content');
-    if(msg.role==='assistant'){content.innerHTML=renderMarkdown(msg.content||'');postProcessCode(content)}
-    else content.textContent=msg.content;
+    if(msg.role==='assistant'){
+      content.innerHTML=renderMarkdown(msg.content||'');
+      parseAndRenderProposal(content, msg.content||'');
+      postProcessCode(content);
+    }
+    else {
+      content.textContent=msg.content;
+    }
     messagesEl.appendChild(el);
   }
   scrollToBottom();
 }
 
-// ============================================================
-// 🆕 رسالة الترحيب الجديدة
-// ============================================================
 function renderEmptyState(){
   messagesEl.innerHTML=`<div class="empty-state">
     <div class="agent-avatar-large">
@@ -367,7 +446,11 @@ async function handleSend(){
   for(const msg of chat.messages){
     const el=createMessageEl(msg.role);
     const content=el.querySelector('.message-content');
-    if(msg.role==='assistant'){content.innerHTML=renderMarkdown(msg.content||'');postProcessCode(content)}
+    if(msg.role==='assistant'){
+      content.innerHTML=renderMarkdown(msg.content||'');
+      parseAndRenderProposal(content, msg.content||'');
+      postProcessCode(content);
+    }
     else content.textContent=msg.content;
     messagesEl.appendChild(el);
   }
@@ -378,8 +461,29 @@ async function handleSend(){
   messagesEl.appendChild(assistantEl);
   scrollToBottom();
 
+  // نظام التعليمات المحاسبي الموجه لـ DeepSeek
+  const accountingSystemPrompt = {
+    role: 'system',
+    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متطور يعتمد على القيد المزدوج.
+عندما يطلب المستخدم إنشاء قيد محاسبي، قم بتحليل العملية وأعطِ الرد باللغة العربية، وعند تيقنك من تفاصيل القيد، أضف اقتراحاً في نهاية ردك ضمن وسم JSON حصراً بالصيغة التالية لكي تتمكن الواجهة من قرض زر الاعتماد:
+\`\`\`json
+{
+  "action": "propose_entry",
+  "entry_date": "YYYY-MM-DD",
+  "description": "وصف تفصيلي للعملية",
+  "entry_type": "يومية",
+  "edit_reason": "قيد تم توليده بواسطة الوكيل الذكي بناءً على طلب المستخدم",
+  "lines": [
+    { "account_code": "رقم_الحساب_المدين", "debit": المبلغ, "credit": 0, "description": "البيان" },
+    { "account_code": "رقم_الحساب_الدائن", "debit": 0, "credit": المبلغ, "description": "البيان" }
+  ]
+}
+\`\`\`
+تأكد دائماً من تساوي مجموع المدين مع مجموع الدائن طبقاً لمبادئ القيد المزدوج.`
+  };
+
   const apiMessages=[
-    {role:'system',content:'أنت الوكيل الذكي، مساعد محاسبي احترافي. أجب بلغة المستخدم، وكن دقيقاً وواضحاً. استخدم Markdown عند الحاجة.'},
+    accountingSystemPrompt,
     ...chat.messages.map(m=>({role:m.role,content:m.content}))
   ];
 
@@ -437,7 +541,9 @@ async function handleSend(){
 
     assistantContent.classList.remove('cursor');
     assistantContent.innerHTML=renderMarkdown(fullResponse);
+    parseAndRenderProposal(assistantContent, fullResponse);
     postProcessCode(assistantContent);
+    
     chat.messages.push({role:'assistant',content:fullResponse});
     saveState();renderChatList();
 
