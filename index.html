@@ -55,7 +55,6 @@ body{font-family:'Segoe UI','Noto Sans Arabic',system-ui,sans-serif;background:v
 @keyframes blink{50%{opacity:0}}
 .error-banner{background:rgba(255,85,102,.1);border:1px solid var(--danger);color:var(--danger);padding:12px;border-radius:8px;font-size:14px}
 .empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
-/* ============ صورة الوكيل الكبيرة وشاشة الترحيب ============ */
 .agent-avatar-large{
   width:110px;height:110px;border-radius:50%;
   background:var(--bg3);border:3px solid var(--border);
@@ -159,7 +158,6 @@ const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020
 const AGENT_IMAGE = "assets/me.jpeg";   
 const USER_IMAGE  = "assets/user.png";  
 
-const FREE_MODELS = [];
 const DEFAULT_MODEL = 'openrouter/free';
 
 const state = {
@@ -281,81 +279,148 @@ function postProcessCode(container){
   container.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b)}catch(e){}});
 }
 
-// دالة تحليل النص وعرض تقرير وقود القيود المحاسبية مع أزرار الاعتماد
+// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية (قيود، معاملات متكاملة، مستودعات، وأصناف)
 function parseAndRenderProposal(assistantContentElement, textContent){
   const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```/);
   
   if (jsonMatch) {
     try {
       const proposal = JSON.parse(jsonMatch[1]);
+      const cleanText = textContent.replace(jsonMatch[0], '');
+      assistantContentElement.innerHTML = renderMarkdown(cleanText);
+
+      const proposalBox = document.createElement('div');
+      proposalBox.style.background = '#16161f';
+      proposalBox.style.border = '1px solid #10b981';
+      proposalBox.style.padding = '14px';
+      proposalBox.style.borderRadius = '10px';
+      proposalBox.style.marginTop = '12px';
+
+      // 1. مقترح قيد محاسبي منفصل
       if (proposal.action === 'propose_entry') {
-        const cleanText = textContent.replace(jsonMatch[0], '');
-        assistantContentElement.innerHTML = renderMarkdown(cleanText);
-
-        const proposalBox = document.createElement('div');
-        proposalBox.className = 'bg-slate-900 border border-emerald-500/50 p-4 rounded-xl mt-4 text-sm shadow-lg';
-        proposalBox.style.background = '#16161f';
-        proposalBox.style.border = '1px solid #10b981';
-        proposalBox.style.padding = '14px';
-        proposalBox.style.borderRadius = '10px';
-        proposalBox.style.marginTop = '12px';
-
         proposalBox.innerHTML = `
           <div style="font-weight:700;color:#34d399;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <span>📋</span> تقرير اقتراح قيد محاسبي (جاهز للترحيل):
+            <span>📋</span> مقترح قيد محاسبي (جاهز للترحيل):
           </div>
           <div style="color:#d1d5db;font-size:13px;background:#0f0f14;padding:10px;border-radius:8px;margin-bottom:12px;line-height:1.6;">
             <div><strong>البيان:</strong> ${escapeHtml(proposal.description)}</div>
             <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)}</div>
-            <div style="margin-top:6px;font-weight:600;color:#34d399;">تفاصيل الحركات (مدين / دائن):</div>
+            <div style="margin-top:6px;font-weight:600;color:#34d399;">تفاصيل الحركات:</div>
             ${proposal.lines.map(l => `
-              <div style="display:flex;justify-content:between;border-bottom:1px solid #2a2a3a;padding:4px 0;">
-                <span>حساب: ${escapeHtml(l.account_code)} | البيان: ${escapeHtml(l.description||'')}</span>
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #2a2a3a;padding:4px 0;font-size:12px;">
+                <span>حساب: ${escapeHtml(l.account_code)} | ${escapeHtml(l.description||'')}</span>
                 <span>مدين: ${l.debit} | دائن: ${l.credit}</span>
               </div>
             `).join('')}
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="approve-entry-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">
-              موافق وترحيل إلى Supabase ✓
-            </button>
-            <button id="reject-entry-btn" style="background:rgba(255,85,102,0.2);color:#ff5566;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;">
-              رفض وإلغاء ✕
-            </button>
+            <button id="approve-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">اعتماد وترحيل القيد ✓</button>
+            <button id="reject-btn" style="background:rgba(255,85,102,0.2);color:#ff5566;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;">رفض ✕</button>
           </div>
         `;
 
-        proposalBox.querySelector('#approve-entry-btn').addEventListener('click', async (e) => {
-          const btn = e.target;
-          btn.disabled = true;
-          btn.textContent = 'جارٍ الترحيل لقاعدة البيانات...';
-
+        proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+          const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل...';
           try {
             const res = await fetch(`${state.backendUrl}/save-entry`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(proposal)
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
             });
-
             const result = await res.json();
             if (res.ok && result.success) {
-              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ تم اعتماد القيد بنجاح وترحيله إلى جدول journal_entries برقم مرجعي: #${result.entry_id}</div>`;
-            } else {
-              throw new Error(result.error || 'خطأ غير معروف أثناء الحفظ');
-            }
-          } catch (err) {
-            proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;padding:8px;background:rgba(255,85,102,0.1);border-radius:6px;">⚠️ فشل الترحيل: ${err.message}</div>`;
-          }
+              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ تم ترحيل القيد بنجاح (رقم السجل: #${result.entry_id})</div>`;
+            } else { throw new Error(result.error || 'فشل الحفظ'); }
+          } catch (err) { proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;padding:8px;background:rgba(255,85,102,0.1);">⚠️ الخطأ: ${err.message}</div>`; }
         });
+      } 
+      
+      // 2. مقترح معاملة متكاملة (قيد مالي + حركة مستودعية)
+      else if (proposal.action === 'propose_integrated_transaction') {
+        proposalBox.innerHTML = `
+          <div style="font-weight:700;color:#34d399;margin-bottom:8px;">📦 معاملة متكاملة (مالي + مستودعي):</div>
+          <div style="color:#d1d5db;font-size:13px;background:#0f0f14;padding:10px;border-radius:8px;margin-bottom:12px;line-height:1.6;">
+            <div><strong>الوصف:</strong> ${escapeHtml(proposal.description)}</div>
+            <div><strong>مستودع الكود:</strong> ${escapeHtml(proposal.warehouse_transaction.warehouse_code)} | <strong>الحركة:</strong> ${proposal.warehouse_transaction.transaction_type} | <strong>الكمية:</strong> ${proposal.warehouse_transaction.quantity}</div>
+            <div><strong>الصنف:</strong> ${escapeHtml(proposal.warehouse_transaction.item_code)} @ سعر: ${proposal.warehouse_transaction.unit_price}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="approve-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">اعتماد وترحيل المعاملة المتكاملة ✓</button>
+            <button id="reject-btn" style="background:rgba(255,85,102,0.2);color:#ff5566;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;">رفض ✕</button>
+          </div>
+        `;
 
-        proposalBox.querySelector('#reject-entry-btn').addEventListener('click', () => {
-          proposalBox.innerHTML = `<div style="color:#9191a8;font-size:13px;font-style:italic;">❌ تم رفض القيد ولم يتم حفظه في قاعدة البيانات.</div>`;
+        proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+          const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل وفحص المخزون...';
+          try {
+            const res = await fetch(`${state.backendUrl}/save-integrated-transaction`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+            });
+            const result = await res.json();
+            if (res.ok && result.success) {
+              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);border-radius:6px;">✅ ${result.message}</div>`;
+            } else { throw new Error(result.error || 'فشل الترحيل'); }
+          } catch (err) { proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;padding:8px;background:rgba(255,85,102,0.1);">⚠️ فشل العملية (قد يكون بسبب منع المخزون السالب): ${err.message}</div>`; }
         });
-
-        assistantContentElement.appendChild(proposalBox);
       }
+
+      // 3. مقترح إضافة مستودع جديد
+      else if (proposal.action === 'propose_warehouse') {
+        proposalBox.innerHTML = `
+          <div style="font-weight:700;color:#34d399;margin-bottom:8px;">🏢 مقترح إضافة مستودع جديد:</div>
+          <div style="color:#d1d5db;font-size:13px;background:#0f0f14;padding:10px;border-radius:8px;margin-bottom:12px;">
+            <div><strong>الكود:</strong> ${escapeHtml(proposal.code)}</div>
+            <div><strong>الاسم:</strong> ${escapeHtml(proposal.name)}</div>
+            <div><strong>النوع:</strong> ${escapeHtml(proposal.type)}</div>
+            <div><strong>الموقع:</strong> ${escapeHtml(proposal.location)}</div>
+          </div>
+          <button id="approve-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">اعتماد وإنشاء المستودع ✓</button>
+        `;
+
+        proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+          const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
+          try {
+            const res = await fetch(`${state.backendUrl}/save-warehouse`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+            });
+            if (res.ok) {
+              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);">✅ تم حفظ المستودع الجديد بنجاح!</div>`;
+            } else { throw new Error(await res.text()); }
+          } catch (err) { proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;">⚠️ ${err.message}</div>`; }
+        });
+      }
+
+      // 4. مقترح إضافة صنف جديد
+      else if (proposal.action === 'propose_item') {
+        proposalBox.innerHTML = `
+          <div style="font-weight:700;color:#34d399;margin-bottom:8px;">📦 مقترح إضافة صنف جديد:</div>
+          <div style="color:#d1d5db;font-size:13px;background:#0f0f14;padding:10px;border-radius:8px;margin-bottom:12px;">
+            <div><strong>الكود:</strong> ${escapeHtml(proposal.code)}</div>
+            <div><strong>الاسم:</strong> ${escapeHtml(proposal.name)}</div>
+            <div><strong>الفئة:</strong> ${escapeHtml(proposal.category)} | <strong>الوحدة:</strong> ${escapeHtml(proposal.unit)}</div>
+            <div><strong>سعر الشراء:</strong> ${proposal.purchase_price} | <strong>سعر البيع:</strong> ${proposal.sale_price}</div>
+          </div>
+          <button id="approve-btn" style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">اعتماد وإنشاء الصنف ✓</button>
+        `;
+
+        proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+          const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
+          try {
+            const res = await fetch(`${state.backendUrl}/save-item`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+            });
+            if (res.ok) {
+              proposalBox.innerHTML = `<div style="color:#34d399;font-weight:bold;font-size:13px;padding:8px;background:rgba(16,185,129,0.1);">✅ تم حفظ الصنف الجديد بنجاح!</div>`;
+            } else { throw new Error(await res.text()); }
+          } catch (err) { proposalBox.innerHTML = `<div style="color:#ff5566;font-size:13px;">⚠️ ${err.message}</div>`; }
+        });
+      }
+
+      proposalBox.querySelector('#reject-btn')?.addEventListener('click', () => {
+        proposalBox.innerHTML = `<div style="color:#9191a8;font-size:13px;font-style:italic;">❌ تم رفض وإلغاء هذا المقترح.</div>`;
+      });
+
+      assistantContentElement.appendChild(proposalBox);
     } catch (e) {
-      console.warn('خطأ في تحليل قيد الـ JSON المقترح:', e);
+      console.warn('خطأ في تحليل مقترح الـ JSON:', e);
     }
   }
 }
@@ -387,12 +452,12 @@ function renderEmptyState(){
            onerror="this.style.display='none';this.parentElement.textContent='🤖'">
     </div>
     <div class="empty-title">أهلاً بك في الوكيل الذكي</div>
-    <div class="empty-subtitle">مساعدك المحاسبي الذكي — جاهز لتنفيذ مهامك بدقة واحترافية</div>
+    <div class="empty-subtitle">مساعدك المحاسبي ونظام الـ ERP المتطور — جاهز لتنفيذ مهامك بدقة واحترافية</div>
     <ul class="welcome-list">
-      <li>إنشاء القيود المحاسبية تلقائياً من وصفك</li>
-      <li>عرض شجرة الحسابات وإضافة أو تعديل الحسابات</li>
-      <li>متابعة الحركات المستودعية والأسعار</li>
-      <li>تنفيذ الإجراءات بعد موافقتك فقط</li>
+      <li>إنشاء القيود والمعاملات المتكاملة (مالي + مستودعي) تلقائياً</li>
+      <li>إدارة المستودعات (بضائع، مستهلكات، مواد نصف مصنعة)</li>
+      <li>إضافة مواد وأصناف جديدة مع الأرصدة والأسعار</li>
+      <li>حماية صارمة ضد المخزون السالب ومنع الحذف الخاطئ</li>
     </ul>
     <div class="agent-signature">
       <img src="${AGENT_IMAGE}" alt=""
@@ -400,10 +465,10 @@ function renderEmptyState(){
       تصميم المبرمج <strong>حمدي إدلبي</strong>
     </div>
     <div class="suggestions" style="margin-top:28px">
-      <button class="suggestion" data-prompt="أضف قيد شراء بضاعة نقداً بمبلغ 5,000,000 ل.س">📝 أضف قيد شراء بضاعة</button>
-      <button class="suggestion" data-prompt="اعرض لي شجرة الحسابات الحالية">🌳 اعرض شجرة الحسابات</button>
-      <button class="suggestion" data-prompt="ما هو رصيد الصندوق حالياً؟">💰 رصيد الصندوق</button>
-      <button class="suggestion" data-prompt="أضف حساب بنك جديد تحت الأصول المتداولة">🏦 أضف حساب بنك</button>
+      <button class="suggestion" data-prompt="اشتر 10 لابتوبات للمستودع الرئيسي نقداً بقيمة 35 مليون">🛒 شراء 10 لابتوبات (متكامل)</button>
+      <button class="suggestion" data-prompt="أخرج 5 رزم أوراق تصوير من مستودع المستهلكات للاستخدام الإداري">📤 إخراج مستهلكات</button>
+      <button class="suggestion" data-prompt="أضف مستودع جديد للمواد الأولية برمز WHS04 في الفرع الشمالي">🏢 أضف مستودع جديد</button>
+      <button class="suggestion" data-prompt="اعرض لي أرصدة المخزون الحالية في المستودعات">📊 اعرض أرصدة المخزون</button>
     </div></div>`;
   messagesEl.querySelectorAll('.suggestion').forEach(b=>{
     b.addEventListener('click',()=>{inputEl.value=b.dataset.prompt;handleSend()});
@@ -461,25 +526,74 @@ async function handleSend(){
   messagesEl.appendChild(assistantEl);
   scrollToBottom();
 
-  // نظام التعليمات المحاسبي الموجه لـ DeepSeek
+  // نظام التعليمات المحاسبي والمستودعي الشامل الموجه لـ DeepSeek عبر Worker
   const accountingSystemPrompt = {
     role: 'system',
-    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متطور يعتمد على القيد المزدوج.
-عندما يطلب المستخدم إنشاء قيد محاسبي، قم بتحليل العملية وأعطِ الرد باللغة العربية، وعند تيقنك من تفاصيل القيد، أضف اقتراحاً في نهاية ردك ضمن وسم JSON حصراً بالصيغة التالية لكي تتمكن الواجهة من قرض زر الاعتماد:
+    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متكامل بقيد مزدوج وإدارة مستودعات صارمة.
+عندما يطلب المستخدم إنشاء قيد محاسبي منفصل، اقترح JSON بالصيغة التالية:
 \`\`\`json
 {
   "action": "propose_entry",
   "entry_date": "YYYY-MM-DD",
   "description": "وصف تفصيلي للعملية",
   "entry_type": "يومية",
-  "edit_reason": "قيد تم توليده بواسطة الوكيل الذكي بناءً على طلب المستخدم",
+  "edit_reason": "قيد تم توليده بواسطة الوكيل الذكي",
   "lines": [
-    { "account_code": "رقم_الحساب_المدين", "debit": المبلغ, "credit": 0, "description": "البيان" },
-    { "account_code": "رقم_الحساب_الدائن", "debit": 0, "credit": المبلغ, "description": "البيان" }
+    { "account_code": "الكود", "debit": المبلغ, "credit": 0, "description": "البيان" },
+    { "account_code": "الكود", "debit": 0, "credit": المبلغ, "description": "البيان" }
   ]
 }
 \`\`\`
-تأكد دائماً من تساوي مجموع المدين مع مجموع الدائن طبقاً لمبادئ القيد المزدوج.`
+
+وعندما يطلب المستخدم معاملة متكاملة (شراء أو بيع أو إخراج مواد تؤثر مالياً ومستودعياً)، اقترح JSON بالصيغة التالية:
+\`\`\`json
+{
+  "action": "propose_integrated_transaction",
+  "description": "وصف العملية",
+  "entry_date": "YYYY-MM-DD",
+  "journal_entry": {
+    "entry_type": "مشتريات/مبيعات/صرف",
+    "edit_reason": "معاملة متكاملة",
+    "lines": [
+      { "account_code": "الكود", "debit": المبلغ, "credit": 0, "description": "البيان" },
+      { "account_code": "الكود", "debit": 0, "credit": المبلغ, "description": "البيان" }
+    ]
+  },
+  "warehouse_transaction": {
+    "warehouse_code": "WHS01",
+    "item_code": "ITM001",
+    "transaction_type": "IN",
+    "quantity": 10,
+    "unit_price": 3500000,
+    "reference_notes": "مرجع الحركة"
+  }
+}
+\`\`\`
+
+وإذا طلب المستخدم إضافة مستودع جديد، اقترحه بالصيغة التالية:
+\`\`\`json
+{
+  "action": "propose_warehouse",
+  "code": "WHS0X",
+  "name": "اسم المستودع",
+  "type": "بضائع جاهزة أو مستهلكات أو مواد نصف مصنعة أو مواد أولية",
+  "location": "الموقع"
+}
+\`\`\`
+
+وإذا طلب المستخدم إضافة صنف جديد، اقترحه بالصيغة التالية:
+\`\`\`json
+{
+  "action": "propose_item",
+  "code": "ITM0X",
+  "name": "اسم الصنف",
+  "category": "بضائع جاهزة أو مستهلكات أو مواد نصف مصنعة أو مواد أولية",
+  "unit": "قطعة/كيلو/رزمة",
+  "purchase_price": 0,
+  "sale_price": 0
+}
+\`\`\`
+تأكد دائماً من مطابقة الحسابات والأكواد للبيانات الحية المتاحة في النظام.`
   };
 
   const apiMessages=[
@@ -502,13 +616,13 @@ async function handleSend(){
       try{const j=JSON.parse(errText);errMsg=j.error?.message||j.message||errMsg}
       catch(e){
         if(errText.startsWith('<')){
-          errMsg=`الخادم الوسيط أعاد صفحة HTML بدلاً من JSON (HTTP ${response.status}). تحقق من صحة رابط الـ Worker وأنه منشور.`;
+          errMsg=`الخادم الوسيط أعاد صفحة HTML بدلاً من JSON (HTTP ${response.status}). تحقق من صحة رابط الـ Worker.`;
         }
       }
       throw new Error(errMsg);
     }
 
-    if(!response.body) throw new Error('المتصفح لا يدعم Streaming. استخدم Chrome/Edge حديثاً.');
+    if(!response.body) throw new Error('المتصفح لا يدعم Streaming.');
 
     const reader=response.body.getReader();
     const decoder=new TextDecoder();
