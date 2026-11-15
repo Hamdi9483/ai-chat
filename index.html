@@ -385,7 +385,7 @@ function postProcessCode(container){
   container.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b)}catch(e){}});
 }
 
-// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية (قيود، معاملات متكاملة، مستودعات، أصناف، حسابات، زبائن/موردين)
+// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية الشاملة
 function parseAndRenderProposal(assistantContentElement, textContent){
   const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```/);
   if (!jsonMatch) return;
@@ -398,7 +398,11 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       'propose_warehouse',
       'propose_item',
       'propose_account',
-      'propose_partner'
+      'propose_partner',
+      'propose_update_item',
+      'propose_update_account',
+      'propose_update_warehouse',
+      'propose_soft_delete'
     ];
     if (!supportedActions.includes(proposal.action)) return;
 
@@ -446,7 +450,7 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 2. مقترح معاملة متكاملة (قيد مالي + حركة مستودعية + إنشاء تلقائي للصنف إن لم يكن موجوداً)
+    // 2. مقترح معاملة متكاملة
     else if (proposal.action === 'propose_integrated_transaction') {
       const wt = proposal.warehouse_transaction || {};
       const txCurrency = wt.currency || proposal.currency || 'حسب بطاقة الصنف';
@@ -521,7 +525,7 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 4. مقترح تعريف بطاقة مادة / صنف جديد (بدون إجبار الأسعار أو الإدخال للمستودع)
+    // 4. مقترح تعريف بطاقة مادة / صنف جديد (مع التعامل الآمن مع تكرار الكود عبر UPSERT أو تحديث)
     else if (proposal.action === 'propose_item') {
       proposalBox.innerHTML = `
         <div class="proposal-title">تعريف بطاقة مادة جديدة</div>
@@ -543,18 +547,50 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           const res = await fetch(`${state.backendUrl}/save-item`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
-          if (res.ok) {
+          const result = await res.json().catch(() => ({}));
+          if (res.ok || result.success) {
             proposalBox.innerHTML = `<div class="proposal-status">تم حفظ بطاقة المادة في النظام بنجاح.</div>`;
-          } else { throw new Error(await res.text()); }
+          } else { throw new Error(result.error || JSON.stringify(result)); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
         }
       });
     }
 
-    // 5. مقترح إضافة أو تعديل حساب في شجرة الحسابات
-    else if (proposal.action === 'propose_account') {
-      const modeLabel = proposal.mode === 'update' ? 'تعديل حساب في شجرة الحسابات' : 'إضافة حساب جديد إلى شجرة الحسابات';
+    // 5. مقترح تعديل مادة موجودة
+    else if (proposal.action === 'propose_update_item') {
+      proposalBox.innerHTML = `
+        <div class="proposal-title">تعديل بطاقة مادة (كود: ${escapeHtml(proposal.code)})</div>
+        <div class="proposal-body">
+          <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
+          <div><strong>الفئة:</strong> ${escapeHtml(proposal.category || '-')} | <strong>الوحدة:</strong> ${escapeHtml(proposal.unit || '-')}</div>
+          <div><strong>العملة:</strong> ${escapeHtml(proposal.currency || '-')}</div>
+        </div>
+        <div class="proposal-actions">
+          <button id="approve-btn" class="btn-approve">اعتماد وتحديث بطاقة المادة</button>
+          <button id="reject-btn" class="btn-reject">رفض</button>
+        </div>
+      `;
+
+      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
+        try {
+          const res = await fetch(`${state.backendUrl}/update-item`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+          });
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && (result.success !== false)) {
+            proposalBox.innerHTML = `<div class="proposal-status">تم تحديث بطاقة المادة بنجاح.</div>`;
+          } else { throw new Error(result.error || 'فشل التحديث'); }
+        } catch (err) {
+          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+    }
+
+    // 6. مقترح تعديل حساب
+    else if (proposal.action === 'propose_update_account' || proposal.action === 'propose_account') {
+      const modeLabel = proposal.action === 'propose_update_account' ? 'تعديل حساب في شجرة الحسابات' : 'إضافة حساب جديد إلى شجرة الحسابات';
       proposalBox.innerHTML = `
         <div class="proposal-title">${modeLabel}</div>
         <div class="proposal-body">
@@ -571,19 +607,82 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
         const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
         try {
-          const res = await fetch(`${state.backendUrl}/save-account`, {
+          const endpoint = proposal.action === 'propose_update_account' ? `${state.backendUrl}/update-account` : `${state.backendUrl}/save-account`;
+          const res = await fetch(endpoint, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
-          if (res.ok) {
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && (result.success !== false)) {
             proposalBox.innerHTML = `<div class="proposal-status">تم حفظ التحديث في شجرة الحسابات بنجاح.</div>`;
-          } else { throw new Error(await res.text()); }
+          } else { throw new Error(result.error || 'فشل التحديث'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
         }
       });
     }
 
-    // 6. مقترح تعريف زبون أو مورد جديد
+    // 7. مقترح تعديل مستودع
+    else if (proposal.action === 'propose_update_warehouse') {
+      proposalBox.innerHTML = `
+        <div class="proposal-title">تعديل مستودع (كود: ${escapeHtml(proposal.code)})</div>
+        <div class="proposal-body">
+          <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
+          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || '-')} | <strong>الموقع:</strong> ${escapeHtml(proposal.location || '-')}</div>
+        </div>
+        <div class="proposal-actions">
+          <button id="approve-btn" class="btn-approve">اعتماد وتحديث المستودع</button>
+          <button id="reject-btn" class="btn-reject">رفض</button>
+        </div>
+      `;
+
+      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
+        try {
+          const res = await fetch(`${state.backendUrl}/update-warehouse`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+          });
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && (result.success !== false)) {
+            proposalBox.innerHTML = `<div class="proposal-status">تم تحديث بيانات المستودع بنجاح.</div>`;
+          } else { throw new Error(result.error || 'فشل التحديث'); }
+        } catch (err) {
+          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+    }
+
+    // 8. مقترح الحذف الناعم (Soft Delete) مع إلغاء الارتباطات
+    else if (proposal.action === 'propose_soft_delete') {
+      const targetTypeLabel = proposal.target_type === 'item' ? 'مادة / صنف' : (proposal.target_type === 'warehouse' ? 'مستودع' : 'حساب');
+      proposalBox.innerHTML = `
+        <div class="proposal-title">مقترح حذف ناعم (إلغاء ارتباط وإلغاء تنشيط) - ${targetTypeLabel}</div>
+        <div class="proposal-body">
+          <div><strong>الكود المستهدف:</strong> ${escapeHtml(proposal.code)}</div>
+          <div><strong>سبب الإجراء:</strong> ${escapeHtml(proposal.reason || 'حذف ناعم وإلغاء الارتباطات')}</div>
+        </div>
+        <div class="proposal-actions">
+          <button id="approve-btn" class="btn-approve">اعتماد التنفيذ (حذف ناعم وإلغاء ارتباط)</button>
+          <button id="reject-btn" class="btn-reject">رفض</button>
+        </div>
+      `;
+
+      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التنفيذ وإلغاء الارتباطات...';
+        try {
+          const res = await fetch(`${state.backendUrl}/soft-delete`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
+          });
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && (result.success !== false)) {
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم إتمام الحذف الناعم وإلغاء الارتباطات بنجاح.')}</div>`;
+          } else { throw new Error(result.error || 'فشل تنفيذ الحذف الناعم'); }
+        } catch (err) {
+          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
+        }
+      });
+    }
+
+    // 9. مقترح تعريف زبون أو مورد جديد
     else if (proposal.action === 'propose_partner') {
       const partnerTypeLabel = proposal.type === 'supplier' ? 'مورد' : (proposal.type === 'both' ? 'زبون ومورد' : 'زبون');
       proposalBox.innerHTML = `
@@ -654,9 +753,8 @@ function renderEmptyState(){
     <div class="empty-subtitle">مساعدك المحاسبي ونظام الـ ERP المتكامل — جاهز لتنفيذ مهامك بدقة واحترافية</div>
     <ul class="welcome-list">
       <li>إنشاء القيود والمعاملات المتكاملة (مالي + مستودعي) متعددة العملات</li>
-      <li>تعريف بطاقات المواد والمستودعات والزبائن والموردين</li>
-      <li>الإضافة والتعديل على شجرة الحسابات</li>
-      <li>حماية صارمة ضد المخزون السالب وتنفيذ الإجراءات بعد موافقتك فقط</li>
+      <li>تعديل وحذف ناعم للمواد، الحسابات، والمستودعات مع إلغاء الارتباطات</li>
+      <li>حماية صارمة ضد تكرار الأكواد (Upsert آمن) ومنع المخزون السالب</li>
     </ul>
     <div class="agent-signature">
       <img src="${AGENT_IMAGE}" alt=""
@@ -664,10 +762,10 @@ function renderEmptyState(){
       تصميم المبرمج <strong>حمدي إدلبي</strong>
     </div>
     <div class="suggestions" style="margin-top:28px">
-      <button class="suggestion" data-prompt="اشتر 10 لابتوبات للمستودع الرئيسي نقداً بقيمة 35 مليون">شراء 10 لابتوبات (متكامل)</button>
-      <button class="suggestion" data-prompt="عرّف مادة جديدة باسم صابون سائل بعملة الدولار USD">تعريف بطاقة مادة جديدة</button>
-      <button class="suggestion" data-prompt="أضف زبون جديد باسم شركة النور للتجارة بعملة USD">تعريف زبون جديد</button>
-      <button class="suggestion" data-prompt="أضف حساب جديد في شجرة الحسابات باسم بنك البركة تحت الأصول المتداولة">إضافة حساب للشجرة</button>
+      <button class="suggestion" data-prompt="عدل المادة ITM008 لتصبح باسم لابتوب حديث واسم فئة أجهزة">تعديل بطاقة مادة</button>
+      <button class="suggestion" data-prompt="احذف المادة ITM008 حذفاً ناعماً مع إلغاء ارتباطاتها">حذف ناعم لمادة</button>
+      <button class="suggestion" data-prompt="عرّف مادة جديدة باسم ماوس لاسلكي برمز ITM009">تعريف مادة جديدة</button>
+      <button class="suggestion" data-prompt="عدل المستودع الرئيسي ليكون باسم المستودع المركزي">تعديل مستودع</button>
     </div></div>`;
   messagesEl.querySelectorAll('.suggestion').forEach(b=>{
     b.addEventListener('click',()=>{inputEl.value=b.dataset.prompt;handleSend()});
@@ -725,33 +823,77 @@ async function handleSend(){
   messagesEl.appendChild(assistantEl);
   scrollToBottom();
 
-  // نظام التعليمات المحاسبي والمستودعي الشامل الموجه لـ AI عبر Worker
+  // نظام التعليمات المحاسبي الشامل المحدث لدعم التعديل، الحذف الناعم، ومنع خطأ التكرار 23505
   const accountingSystemPrompt = {
     role: 'system',
-    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متكامل بقيد مزدوج وإدارة مستودعات صارمة تدعم تعدد العملات.
+    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متكامل بقيد مزدوج وإدارة مستودعات ودعم تعدد العملات.
 التزم بالقواعد التالية بدقة:
 - لا تستخدم أي رموز تعبيرية (Emojis) نهائياً في ردودك.
-- عند تعريف مادة جديدة بمفردها دون شراء أو إدخال مستودعي، لا تشترط إدخال سعر أو كمية، واقترح بطاقة مادة فقط (propose_item).
-- عند طلب شراء أو إدخال كمية لمادة غير موجودة، قم تلقائياً باقتراح معاملة متكاملة (propose_integrated_transaction) تتضمن إنشاء بطاقة المادة الجديدة وتنفيذ القيد والحركة المستودعية معاً.
-- بالنسبة للعملة: إذا ذكر المستخدم عملة محددة في المعاملة (مثل USD, TRY, SYP, EUR) فاعتمدها في القيد والحركة؛ وإذا لم يذكرها، تترك لتُؤخذ تلقائياً من العملة الافتراضية المعرفة في بطاقة المادة.
+- عند محاولة حفظ مادة جديدة، إذا كانت موجودة مسبقاً (لتجنب خطأ 23505 duplicate key)، استخدم إجراء التعديل (propose_update_item) أو اقترح تحديث السجل.
+- لدعم تعديل مادة موجودة، استخدم الصيغة: propose_update_item.
+- لدعم تعديل حساب، استخدم الصيغة: propose_update_account.
+- لدعم تعديل مستودع، استخدم الصيغة: propose_update_warehouse.
+- لدعم الحذف الناعم (Soft Delete) مع إلغاء أي ارتباطات نشطة بالمادة أو المستودع أو الحساب (مثل إلغاء تفعيل السجل أو تفريغ ربطه بالعمليات المؤرشفة)، استخدم الصيغة: propose_soft_delete مع تحديد target_type (item, warehouse, account).
 
 نماذج الـ JSON المعتمدة:
 
-1. لقيد محاسبي منفصل:
+1. لتعديل بطاقة مادة:
 \`\`\`json
 {
-  "action": "propose_entry",
-  "entry_date": "YYYY-MM-DD",
-  "description": "وصف تفصيلي للعملية",
-  "entry_type": "يومية",
-  "currency": "SYP",
-  "lines": [
-    { "account_code": "الكود", "debit": 0, "credit": 0, "description": "البيان" }
-  ]
+  "action": "propose_update_item",
+  "code": "ITM008",
+  "name": "اسم المادة المعدل",
+  "category": "الفئة",
+  "unit": "قطعة",
+  "currency": "USD"
 }
 \`\`\`
 
-2. لمعاملة متكاملة (شراء، بيع، أو صرف مواد):
+2. لتعديل مستودع:
+\`\`\`json
+{
+  "action": "propose_update_warehouse",
+  "code": "WHS01",
+  "name": "اسم المستودع المعدل",
+  "type": "بضائع جاهزة",
+  "location": "الموقع المعدل"
+}
+\`\`\`
+
+3. لتعديل حساب:
+\`\`\`json
+{
+  "action": "propose_update_account",
+  "code": "10101",
+  "name": "اسم الحساب المعدل",
+  "type": "أصول",
+  "parent_code": "101"
+}
+\`\`\`
+
+4. للحذف الناعم (Soft Delete) وإلغاء الارتباطات:
+\`\`\`json
+{
+  "action": "propose_soft_delete",
+  "target_type": "item",
+  "code": "ITM008",
+  "reason": "إلغاء ارتباطات وحذف ناعم"
+}
+\`\`\`
+
+5. لتعريف بطاقة مادة جديدة:
+\`\`\`json
+{
+  "action": "propose_item",
+  "code": "ITM00X",
+  "name": "اسم المادة",
+  "category": "بضائع جاهزة",
+  "unit": "قطعة",
+  "currency": "SYP"
+}
+\`\`\`
+
+6. لمعاملة متكاملة:
 \`\`\`json
 {
   "action": "propose_integrated_transaction",
@@ -771,54 +913,8 @@ async function handleSend(){
     "quantity": 10,
     "unit_price": 100,
     "currency": "USD",
-    "reference_notes": "مرجع الحركة"
+    "reference_notes": "مرجع"
   }
-}
-\`\`\`
-
-3. لتعريف بطاقة مادة جديدة (بدون سعر إجباري أو إدخال مستودعي):
-\`\`\`json
-{
-  "action": "propose_item",
-  "code": "ITM00X",
-  "name": "اسم المادة",
-  "category": "بضائع جاهزة",
-  "unit": "قطعة",
-  "currency": "SYP"
-}
-\`\`\`
-
-4. لإضافة مستودع جديد:
-\`\`\`json
-{
-  "action": "propose_warehouse",
-  "code": "WHS0X",
-  "name": "اسم المستودع",
-  "type": "بضائع جاهزة",
-  "location": "الموقع"
-}
-\`\`\`
-
-5. لإضافة أو تعديل حساب في شجرة الحسابات:
-\`\`\`json
-{
-  "action": "propose_account",
-  "mode": "create",
-  "code": "رقم_الحساب",
-  "name": "اسم الحساب",
-  "type": "أصول",
-  "parent_code": "رقم_الحساب_الأب"
-}
-\`\`\`
-
-6. لتعريف زبون أو مورد جديد:
-\`\`\`json
-{
-  "action": "propose_partner",
-  "code": "PRT00X",
-  "name": "اسم الزبون أو المورد",
-  "type": "customer",
-  "currency": "SYP"
 }
 \`\`\``
   };
@@ -931,7 +1027,7 @@ async function init(){
 
   if(window.innerWidth>768) sidebar.classList.remove('hidden');
   if(!state.backendUrl) setTimeout(openSettings,400);
-  inputEl.focus();
+  input_focus = inputEl.focus();
 }
 init();
 </script>
