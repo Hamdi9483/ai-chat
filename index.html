@@ -252,6 +252,11 @@ dialog h2{margin-bottom:16px;font-size:20px}
     <input type="url" id="backendUrlInput" placeholder="https://your-worker.workers.dev">
     <div class="dialog-hint">الصق رابط الـ Worker الذي نشرته على Cloudflare. يبدأ عادةً بـ https://</div>
   </div>
+  <div class="dialog-field">
+    <label for="companyIdInput">معرّف الشركة (Company UUID)</label>
+    <input type="text" id="companyIdInput" placeholder="00000000-0000-0000-0000-000000000000">
+    <div class="dialog-hint">معرّف الشركة لعزل البيانات (Multi-tenant RLS)</div>
+  </div>
   <div class="dialog-actions">
     <button class="btn btn-primary" id="saveSettings">حفظ</button>
     <button class="btn" id="cancelSettings">إلغاء</button>
@@ -260,6 +265,7 @@ dialog h2{margin-bottom:16px;font-size:20px}
 
 <script>
 const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
+const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000000";
 
 const AGENT_IMAGE = "assets/me.jpeg";
 const USER_IMAGE  = "assets/user.png";
@@ -268,6 +274,7 @@ const DEFAULT_MODEL = 'openrouter/free';
 
 const state = {
   backendUrl: localStorage.getItem('or_backend_url') || BACKEND_URL,
+  companyId: localStorage.getItem('or_company_id') || DEFAULT_COMPANY_ID,
   model: localStorage.getItem('or_model') || DEFAULT_MODEL,
   chats: JSON.parse(localStorage.getItem('or_chats') || '[]'),
   activeChatId: localStorage.getItem('or_active_chat') || null,
@@ -296,6 +303,7 @@ function saveState(){
   localStorage.setItem('or_active_chat',state.activeChatId||'');
   localStorage.setItem('or_model',state.model);
   localStorage.setItem('or_backend_url',state.backendUrl);
+  localStorage.setItem('or_company_id',state.companyId);
   localStorage.setItem('or_theme',state.theme);
 }
 function getActiveChat(){return state.chats.find(c=>c.id===state.activeChatId)}
@@ -385,13 +393,16 @@ function postProcessCode(container){
   container.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b)}catch(e){}});
 }
 
-// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية الشاملة
+// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية المتوافقة مع المخطط المحاسبي الجديد
 function parseAndRenderProposal(assistantContentElement, textContent){
   const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```/);
   if (!jsonMatch) return;
 
   try {
     const proposal = JSON.parse(jsonMatch[1]);
+    // إرفاق معرف الشركة تلقائياً لكل مقترح
+    proposal.company_id = state.companyId;
+
     const supportedActions = [
       'propose_entry',
       'propose_integrated_transaction',
@@ -412,19 +423,19 @@ function parseAndRenderProposal(assistantContentElement, textContent){
     const proposalBox = document.createElement('div');
     proposalBox.className = 'proposal-card';
 
-    // 1. مقترح قيد محاسبي منفصل
+    // 1. مقترح قيد محاسبي
     if (proposal.action === 'propose_entry') {
-      const currencyBadge = proposal.currency ? ` | <strong>العملة:</strong> ${escapeHtml(proposal.currency)}` : '';
+      const currencyBadge = proposal.currency_code ? ` | <strong>العملة:</strong> ${escapeHtml(proposal.currency_code)}` : '';
       proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح قيد محاسبي (جاهز للترحيل)</div>
+        <div class="proposal-title">مقترح قيد يومية (قيد مزدوج)</div>
         <div class="proposal-body">
           <div><strong>البيان:</strong> ${escapeHtml(proposal.description)}</div>
           <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)}${currencyBadge}</div>
-          <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">تفاصيل الحركات:</div>
+          <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">أطراف القيد:</div>
           ${(proposal.lines || []).map(l => `
             <div class="proposal-row">
               <span>حساب: ${escapeHtml(l.account_code)} | ${escapeHtml(l.description||'')}</span>
-              <span>مدين: ${l.debit || 0} | دائن: ${l.credit || 0} ${escapeHtml(l.currency || proposal.currency || '')}</span>
+              <span>مدين: ${l.debit || 0} | دائن: ${l.credit || 0}</span>
             </div>
           `).join('')}
         </div>
@@ -442,7 +453,7 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           });
           const result = await res.json();
           if (res.ok && result.success) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم ترحيل القيد بنجاح (رقم السجل: #${result.entry_id})</div>`;
+            proposalBox.innerHTML = `<div class="proposal-status">تم ترحيل القيد بنجاح (رقم القيد: ${escapeHtml(String(result.entry_id || ''))})</div>`;
           } else { throw new Error(result.error || 'فشل الحفظ'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ في الترحيل: ${escapeHtml(err.message)}</div>`;
@@ -450,20 +461,20 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 2. مقترح معاملة متكاملة
+    // 2. مقترح معاملة متكاملة / فاتورة
     else if (proposal.action === 'propose_integrated_transaction') {
       const wt = proposal.warehouse_transaction || {};
-      const txCurrency = wt.currency || proposal.currency || 'حسب بطاقة الصنف';
-      const txTypeLabel = wt.transaction_type === 'IN' ? 'إدخال / شراء (IN)' : (wt.transaction_type === 'OUT' ? 'إخراج / بيع (OUT)' : escapeHtml(wt.transaction_type));
+      const txCurrency = wt.currency_code || proposal.currency_code || 'SAR';
+      const txTypeLabel = wt.transaction_type === 'IN' ? 'إدخال / شراء' : (wt.transaction_type === 'OUT' ? 'إخراج / بيع' : escapeHtml(wt.transaction_type));
       proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح معاملة متكاملة (مالي + مستودعي)</div>
+        <div class="proposal-title">مقترح معاملة متكاملة (مالي + جرد مستمر)</div>
         <div class="proposal-body">
           <div><strong>الوصف:</strong> ${escapeHtml(proposal.description)}</div>
-          <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)} | <strong>العملة المعتمدة:</strong> ${escapeHtml(txCurrency)}</div>
-          <div><strong>المستودع:</strong> ${escapeHtml(wt.warehouse_code)} | <strong>نوع الحركة:</strong> ${txTypeLabel}</div>
+          <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)} | <strong>العملة:</strong> ${escapeHtml(txCurrency)}</div>
+          <div><strong>المستودع:</strong> ${escapeHtml(wt.warehouse_code)} | <strong>النوع:</strong> ${txTypeLabel}</div>
           <div><strong>الصنف:</strong> ${escapeHtml(wt.item_code)} ${wt.item_name ? '(' + escapeHtml(wt.item_name) + ')' : ''} | <strong>الكمية:</strong> ${wt.quantity} | <strong>سعر الوحدة:</strong> ${wt.unit_price}</div>
           ${proposal.journal_entry?.lines ? `
-            <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">القيد المحاسبي المرافق:</div>
+            <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">القيد المحاسبي التلقائي:</div>
             ${proposal.journal_entry.lines.map(l => `
               <div class="proposal-row">
                 <span>حساب: ${escapeHtml(l.account_code)} | ${escapeHtml(l.description||'')}</span>
@@ -473,20 +484,20 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           ` : ''}
         </div>
         <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وترحيل المعاملة المتكاملة</button>
+          <button id="approve-btn" class="btn-approve">اعتماد وترحيل المعاملة</button>
           <button id="reject-btn" class="btn-reject">رفض</button>
         </div>
       `;
 
       proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل وفحص المخزون...';
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل...';
         try {
           const res = await fetch(`${state.backendUrl}/save-integrated-transaction`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
           const result = await res.json();
           if (res.ok && result.success) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم ترحيل المعاملة المتكاملة بنجاح')}</div>`;
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم ترحيل المعاملة بنجاح')}</div>`;
           } else { throw new Error(result.error || 'فشل الترحيل'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">فشل العملية: ${escapeHtml(err.message)}</div>`;
@@ -494,15 +505,14 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 3. مقترح إضافة مستودع جديد
+    // 3. مقترح إضافة مستودع جديد (Warehouses)
     else if (proposal.action === 'propose_warehouse') {
       proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح إضافة مستودع جديد</div>
+        <div class="proposal-title">مقترح إنشاء مستودع جديد</div>
         <div class="proposal-body">
-          <div><strong>الكود:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>الاسم:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || 'بضائع جاهزة')}</div>
-          <div><strong>الموقع:</strong> ${escapeHtml(proposal.location || 'غير محدد')}</div>
+          <div><strong>كود المستودع:</strong> ${escapeHtml(proposal.code)}</div>
+          <div><strong>اسم المستودع:</strong> ${escapeHtml(proposal.name)}</div>
+          <div><strong>العنوان:</strong> ${escapeHtml(proposal.address || 'غير محدد')}</div>
         </div>
         <div class="proposal-actions">
           <button id="approve-btn" class="btn-approve">اعتماد وإنشاء المستودع</button>
@@ -516,24 +526,24 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           const res = await fetch(`${state.backendUrl}/save-warehouse`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
-          if (res.ok) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم حفظ المستودع الجديد بنجاح.</div>`;
-          } else { throw new Error(await res.text()); }
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && result.success !== false) {
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ المستودع الجديد بنجاح.')}</div>`;
+          } else { throw new Error(result.error || 'فشل حفظ المستودع'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
         }
       });
     }
 
-    // 4. مقترح تعريف بطاقة مادة / صنف جديد (مع التعامل الآمن مع تكرار الكود عبر UPSERT أو تحديث)
+    // 4. مقترح تعريف بطاقة مادة جديدة (Items - متوافق مع standard_cost و sale_price)
     else if (proposal.action === 'propose_item') {
       proposalBox.innerHTML = `
         <div class="proposal-title">تعريف بطاقة مادة جديدة</div>
         <div class="proposal-body">
           <div><strong>كود المادة:</strong> ${escapeHtml(proposal.code)}</div>
           <div><strong>اسم المادة:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>الفئة:</strong> ${escapeHtml(proposal.category || 'بضائع جاهزة')} | <strong>الوحدة:</strong> ${escapeHtml(proposal.unit || 'قطعة')}</div>
-          <div><strong>العملة الافتراضية:</strong> ${escapeHtml(proposal.currency || 'SYP')}</div>
+          <div><strong>التكلفة المعيارية / الشراء:</strong> ${proposal.purchase_price || proposal.standard_cost || 0} | <strong>سعر البيع:</strong> ${proposal.sale_price || 0}</div>
         </div>
         <div class="proposal-actions">
           <button id="approve-btn" class="btn-approve">اعتماد وحفظ بطاقة المادة</button>
@@ -548,8 +558,8 @@ function parseAndRenderProposal(assistantContentElement, textContent){
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
           const result = await res.json().catch(() => ({}));
-          if (res.ok || result.success) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم حفظ بطاقة المادة في النظام بنجاح.</div>`;
+          if (res.ok && result.success !== false) {
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ بطاقة المادة في النظام بنجاح.')}</div>`;
           } else { throw new Error(result.error || JSON.stringify(result)); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
@@ -557,14 +567,13 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 5. مقترح تعديل مادة موجودة
+    // 5. مقترح تعديل بطاقة مادة موجودة
     else if (proposal.action === 'propose_update_item') {
       proposalBox.innerHTML = `
         <div class="proposal-title">تعديل بطاقة مادة (كود: ${escapeHtml(proposal.code)})</div>
         <div class="proposal-body">
           <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>الفئة:</strong> ${escapeHtml(proposal.category || '-')} | <strong>الوحدة:</strong> ${escapeHtml(proposal.unit || '-')}</div>
-          <div><strong>العملة:</strong> ${escapeHtml(proposal.currency || '-')}</div>
+          <div><strong>التكلفة المعيارية:</strong> ${proposal.standard_cost || proposal.purchase_price || '-'} | <strong>سعر البيع:</strong> ${proposal.sale_price || '-'}</div>
         </div>
         <div class="proposal-actions">
           <button id="approve-btn" class="btn-approve">اعتماد وتحديث بطاقة المادة</button>
@@ -588,7 +597,7 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 6. مقترح تعديل حساب
+    // 6. مقترح إضافة أو تعديل حساب في شجرة الحسابات (Accounts - متوافق مع type و normal)
     else if (proposal.action === 'propose_update_account' || proposal.action === 'propose_account') {
       const modeLabel = proposal.action === 'propose_update_account' ? 'تعديل حساب في شجرة الحسابات' : 'إضافة حساب جديد إلى شجرة الحسابات';
       proposalBox.innerHTML = `
@@ -596,16 +605,16 @@ function parseAndRenderProposal(assistantContentElement, textContent){
         <div class="proposal-body">
           <div><strong>كود الحساب:</strong> ${escapeHtml(proposal.code)}</div>
           <div><strong>اسم الحساب:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || 'غير محدد')} | <strong>الحساب الأب:</strong> ${escapeHtml(proposal.parent_code || 'رئيسي')}</div>
+          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || 'asset')} | <strong>الرصيد الطبيعي:</strong> ${escapeHtml(proposal.normal || 'debit')}</div>
         </div>
         <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وتحديث شجرة الحسابات</button>
+          <button id="approve-btn" class="btn-approve">اعتماد وحفظ الحساب</button>
           <button id="reject-btn" class="btn-reject">رفض</button>
         </div>
       `;
 
       proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
         try {
           const endpoint = proposal.action === 'propose_update_account' ? `${state.backendUrl}/update-account` : `${state.backendUrl}/save-account`;
           const res = await fetch(endpoint, {
@@ -613,8 +622,8 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           });
           const result = await res.json().catch(() => ({}));
           if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم حفظ التحديث في شجرة الحسابات بنجاح.</div>`;
-          } else { throw new Error(result.error || 'فشل التحديث'); }
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ الحساب في شجرة الحسابات بنجاح.')}</div>`;
+          } else { throw new Error(result.error || 'فشل الحفظ'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
         }
@@ -627,7 +636,7 @@ function parseAndRenderProposal(assistantContentElement, textContent){
         <div class="proposal-title">تعديل مستودع (كود: ${escapeHtml(proposal.code)})</div>
         <div class="proposal-body">
           <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || '-')} | <strong>الموقع:</strong> ${escapeHtml(proposal.location || '-')}</div>
+          <div><strong>العنوان:</strong> ${escapeHtml(proposal.address || '-')}</div>
         </div>
         <div class="proposal-actions">
           <button id="approve-btn" class="btn-approve">اعتماد وتحديث المستودع</button>
@@ -651,30 +660,30 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 8. مقترح الحذف الناعم (Soft Delete) مع إلغاء الارتباطات
+    // 8. مقترح الحذف الناعم (Soft Delete)
     else if (proposal.action === 'propose_soft_delete') {
       const targetTypeLabel = proposal.target_type === 'item' ? 'مادة / صنف' : (proposal.target_type === 'warehouse' ? 'مستودع' : 'حساب');
       proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح حذف ناعم (إلغاء ارتباط وإلغاء تنشيط) - ${targetTypeLabel}</div>
+        <div class="proposal-title">مقترح حذف ناعم (إلغاء تنشيط) - ${targetTypeLabel}</div>
         <div class="proposal-body">
           <div><strong>الكود المستهدف:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>سبب الإجراء:</strong> ${escapeHtml(proposal.reason || 'حذف ناعم وإلغاء الارتباطات')}</div>
+          <div><strong>السبب:</strong> ${escapeHtml(proposal.reason || 'إلغاء تنشيط وحذف ناعم')}</div>
         </div>
         <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد التنفيذ (حذف ناعم وإلغاء ارتباط)</button>
+          <button id="approve-btn" class="btn-approve">اعتماد الحذف الناعم</button>
           <button id="reject-btn" class="btn-reject">رفض</button>
         </div>
       `;
 
       proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التنفيذ وإلغاء الارتباطات...';
+        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التنفيذ...';
         try {
           const res = await fetch(`${state.backendUrl}/soft-delete`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
           const result = await res.json().catch(() => ({}));
           if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم إتمام الحذف الناعم وإلغاء الارتباطات بنجاح.')}</div>`;
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم تنفيذ الحذف الناعم بنجاح.')}</div>`;
           } else { throw new Error(result.error || 'فشل تنفيذ الحذف الناعم'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
@@ -682,15 +691,15 @@ function parseAndRenderProposal(assistantContentElement, textContent){
       });
     }
 
-    // 9. مقترح تعريف زبون أو مورد جديد
+    // 9. مقترح تعريف شريك (عميل / مورد - Partners)
     else if (proposal.action === 'propose_partner') {
-      const partnerTypeLabel = proposal.type === 'supplier' ? 'مورد' : (proposal.type === 'both' ? 'زبون ومورد' : 'زبون');
+      const partnerTypeLabel = proposal.type === 'supplier' ? 'مورد' : (proposal.type === 'both' ? 'عميل ومورد' : 'عميل');
       proposalBox.innerHTML = `
         <div class="proposal-title">تعريف بطاقة ${partnerTypeLabel} جديد</div>
         <div class="proposal-body">
           <div><strong>الكود:</strong> ${escapeHtml(proposal.code)}</div>
           <div><strong>الاسم:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>الصفة:</strong> ${partnerTypeLabel} | <strong>العملة الافتراضية:</strong> ${escapeHtml(proposal.currency || 'SYP')}</div>
+          <div><strong>الصفة:</strong> ${partnerTypeLabel} | <strong>العملة:</strong> ${escapeHtml(proposal.currency_code || 'SAR')}</div>
         </div>
         <div class="proposal-actions">
           <button id="approve-btn" class="btn-approve">اعتماد وحفظ البطاقة</button>
@@ -704,9 +713,10 @@ function parseAndRenderProposal(assistantContentElement, textContent){
           const res = await fetch(`${state.backendUrl}/save-partner`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
           });
-          if (res.ok) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم تعريف وحفظ ${partnerTypeLabel} في النظام بنجاح.</div>`;
-          } else { throw new Error(await res.text()); }
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && result.success !== false) {
+            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم تعريف وحفظ الشريك بنجاح.')}</div>`;
+          } else { throw new Error(result.error || 'فشل حفظ الشريك'); }
         } catch (err) {
           proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
         }
@@ -750,11 +760,11 @@ function renderEmptyState(){
            onerror="this.style.display='none';this.parentElement.textContent='AI'">
     </div>
     <div class="empty-title">أهلاً بك في الوكيل الذكي</div>
-    <div class="empty-subtitle">مساعدك المحاسبي ونظام الـ ERP المتكامل — جاهز لتنفيذ مهامك بدقة واحترافية</div>
+    <div class="empty-subtitle">مساعدك المحاسبي ونظام الـ ERP المتكامل — مبني على القيد المزدوج والجرد المستمر</div>
     <ul class="welcome-list">
-      <li>إنشاء القيود والمعاملات المتكاملة (مالي + مستودعي) متعددة العملات</li>
-      <li>تعديل وحذف ناعم للمواد، الحسابات، والمستودعات مع إلغاء الارتباطات</li>
-      <li>حماية صارمة ضد تكرار الأكواد (Upsert آمن) ومنع المخزون السالب</li>
+      <li>دعم كامل للمخطط المحاسبي الاحترافي وعزل الشركات (Multi-tenant)</li>
+      <li>تعريف وتعديل المواد، الحسابات الشجرية، المستودعات، والشركاء</li>
+      <li>حماية صارمة للبيانات المالية بدقة numeric(18,4) ومنع التكرار</li>
     </ul>
     <div class="agent-signature">
       <img src="${AGENT_IMAGE}" alt=""
@@ -762,10 +772,10 @@ function renderEmptyState(){
       تصميم المبرمج <strong>حمدي إدلبي</strong>
     </div>
     <div class="suggestions" style="margin-top:28px">
-      <button class="suggestion" data-prompt="عدل المادة ITM008 لتصبح باسم لابتوب حديث واسم فئة أجهزة">تعديل بطاقة مادة</button>
-      <button class="suggestion" data-prompt="احذف المادة ITM008 حذفاً ناعماً مع إلغاء ارتباطاتها">حذف ناعم لمادة</button>
-      <button class="suggestion" data-prompt="عرّف مادة جديدة باسم ماوس لاسلكي برمز ITM009">تعريف مادة جديدة</button>
-      <button class="suggestion" data-prompt="عدل المستودع الرئيسي ليكون باسم المستودع المركزي">تعديل مستودع</button>
+      <button class="suggestion" data-prompt="عرّف مادة جديدة باسم شاشة 27 بوصة برمز ITM-101 بسعر بيع 850 وتكلفة 650">تعريف مادة جديدة</button>
+      <button class="suggestion" data-prompt="أضف مستودع جديد برمز WH-02 باسم مستودع المنطقة الشمالية وعنوانه حلب">إضافة مستودع جديد</button>
+      <button class="suggestion" data-prompt="أضف حساب جديد في الشجرة برمز 1105 باسم صندوق المبيعات نوعه asset وطبيعته debit">إضافة حساب للشجرة</button>
+      <button class="suggestion" data-prompt="عرّف عميل جديد برمز CUST-01 باسم شركة الأفق للتجارة">تعريف عميل جديد</button>
     </div></div>`;
   messagesEl.querySelectorAll('.suggestion').forEach(b=>{
     b.addEventListener('click',()=>{inputEl.value=b.dataset.prompt;handleSend()});
@@ -823,98 +833,68 @@ async function handleSend(){
   messagesEl.appendChild(assistantEl);
   scrollToBottom();
 
-  // نظام التعليمات المحاسبي الشامل المحدث لدعم التعديل، الحذف الناعم، ومنع خطأ التكرار 23505
   const accountingSystemPrompt = {
     role: 'system',
-    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام متكامل بقيد مزدوج وإدارة مستودعات ودعم تعدد العملات.
+    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام محاسبي متكامل مبني على القيد المزدوج والجرد المستمر (Perpetual Inventory).
 التزم بالقواعد التالية بدقة:
 - لا تستخدم أي رموز تعبيرية (Emojis) نهائياً في ردودك.
-- عند محاولة حفظ مادة جديدة، إذا كانت موجودة مسبقاً (لتجنب خطأ 23505 duplicate key)، استخدم إجراء التعديل (propose_update_item) أو اقترح تحديث السجل.
-- لدعم تعديل مادة موجودة، استخدم الصيغة: propose_update_item.
-- لدعم تعديل حساب، استخدم الصيغة: propose_update_account.
-- لدعم تعديل مستودع، استخدم الصيغة: propose_update_warehouse.
-- لدعم الحذف الناعم (Soft Delete) مع إلغاء أي ارتباطات نشطة بالمادة أو المستودع أو الحساب (مثل إلغاء تفعيل السجل أو تفريغ ربطه بالعمليات المؤرشفة)، استخدم الصيغة: propose_soft_delete مع تحديد target_type (item, warehouse, account).
-
-نماذج الـ JSON المعتمدة:
-
-1. لتعديل بطاقة مادة:
+- التزم بمسميات الحقول المعتمدة في قاعدة البيانات الجديدة:
+  1. لتعريف مادة جديدة:
+\`\`\`json
+{
+  "action": "propose_item",
+  "code": "ITM-001",
+  "name": "اسم المادة",
+  "purchase_price": 0,
+  "sale_price": 0
+}
+\`\`\`
+  2. لتعديل مادة موجودة:
 \`\`\`json
 {
   "action": "propose_update_item",
-  "code": "ITM008",
-  "name": "اسم المادة المعدل",
-  "category": "الفئة",
-  "unit": "قطعة",
-  "currency": "USD"
+  "code": "ITM-001",
+  "name": "الاسم الجديد",
+  "standard_cost": 0,
+  "sale_price": 0
 }
 \`\`\`
-
-2. لتعديل مستودع:
+  3. لإضافة مستودع جديد:
 \`\`\`json
 {
-  "action": "propose_update_warehouse",
-  "code": "WHS01",
-  "name": "اسم المستودع المعدل",
-  "type": "بضائع جاهزة",
-  "location": "الموقع المعدل"
+  "action": "propose_warehouse",
+  "code": "WH-01",
+  "name": "اسم المستودع",
+  "address": "الموقع أو العنوان"
 }
 \`\`\`
-
-3. لتعديل حساب:
+  4. لإضافة حساب جديد لشجرة الحسابات (type: asset/liability/equity/revenue/expense, normal: debit/credit):
 \`\`\`json
 {
-  "action": "propose_update_account",
-  "code": "10101",
-  "name": "اسم الحساب المعدل",
-  "type": "أصول",
-  "parent_code": "101"
+  "action": "propose_account",
+  "code": "1101",
+  "name": "اسم الحساب",
+  "type": "asset",
+  "normal": "debit"
 }
 \`\`\`
-
-4. للحذف الناعم (Soft Delete) وإلغاء الارتباطات:
+  5. لتعريف عميل أو مورد (type: customer/supplier/both):
+\`\`\`json
+{
+  "action": "propose_partner",
+  "code": "CUST-01",
+  "name": "اسم الشريك",
+  "type": "customer",
+  "currency_code": "SAR"
+}
+\`\`\`
+  6. للحذف الناعم (target_type: item/warehouse/account):
 \`\`\`json
 {
   "action": "propose_soft_delete",
   "target_type": "item",
-  "code": "ITM008",
-  "reason": "إلغاء ارتباطات وحذف ناعم"
-}
-\`\`\`
-
-5. لتعريف بطاقة مادة جديدة:
-\`\`\`json
-{
-  "action": "propose_item",
-  "code": "ITM00X",
-  "name": "اسم المادة",
-  "category": "بضائع جاهزة",
-  "unit": "قطعة",
-  "currency": "SYP"
-}
-\`\`\`
-
-6. لمعاملة متكاملة:
-\`\`\`json
-{
-  "action": "propose_integrated_transaction",
-  "description": "وصف العملية",
-  "entry_date": "YYYY-MM-DD",
-  "journal_entry": {
-    "entry_type": "مشتريات",
-    "lines": [
-      { "account_code": "الكود", "debit": 0, "credit": 0, "description": "البيان" }
-    ]
-  },
-  "warehouse_transaction": {
-    "warehouse_code": "WHS01",
-    "item_code": "ITM001",
-    "item_name": "اسم المادة",
-    "transaction_type": "IN",
-    "quantity": 10,
-    "unit_price": 100,
-    "currency": "USD",
-    "reference_notes": "مرجع"
-  }
+  "code": "ITM-001",
+  "reason": "سبب الإلغاء"
 }
 \`\`\``
   };
@@ -930,7 +910,12 @@ async function handleSend(){
     const response=await fetch(state.backendUrl,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:state.model,messages:apiMessages,stream:true}),
+      body:JSON.stringify({
+        company_id: state.companyId,
+        model:state.model,
+        messages:apiMessages,
+        stream:true
+      }),
     });
 
     if(!response.ok){
@@ -996,11 +981,19 @@ async function handleSend(){
   }
 }
 
-function openSettings(){$('backendUrlInput').value=state.backendUrl;settingsDialog.showModal()}
+function openSettings(){
+  $('backendUrlInput').value=state.backendUrl;
+  $('companyIdInput').value=state.companyId;
+  settingsDialog.showModal();
+}
 function saveSettings(){
   let url=$('backendUrlInput').value.trim();
   if(url && !url.startsWith('http')) url='https://'+url;
-  state.backendUrl=url;saveState();settingsDialog.close();
+  const cid=$('companyIdInput').value.trim() || DEFAULT_COMPANY_ID;
+  state.backendUrl=url;
+  state.companyId=cid;
+  saveState();
+  settingsDialog.close();
   if(state.backendUrl && getActiveChat()?.messages.length===0) renderMessages();
 }
 function autoResize(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,200)+'px'}
@@ -1027,7 +1020,7 @@ async function init(){
 
   if(window.innerWidth>768) sidebar.classList.remove('hidden');
   if(!state.backendUrl) setTimeout(openSettings,400);
-  input_focus = inputEl.focus();
+  inputEl.focus();
 }
 init();
 </script>
