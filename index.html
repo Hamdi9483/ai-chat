@@ -1,1028 +1,903 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الوكيل الذكي — تصميم المبرمج حمدي إدلبي</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-<style>
-:root{
-  --bg:#0a0a0a;
-  --bg2:#121212;
-  --bg3:#1c1c1c;
-  --hover:#262626;
-  --border:#333333;
-  --text:#f5f5f5;
-  --dim:#9e9e9e;
-  --accent:#ffffff;
-  --accent2:#d4d4d4;
-  --accent-text:#0a0a0a;
-  --user:#262626;
-  --user-text:#ffffff;
-  --bot:#141414;
-  --danger:#a3a3a3;
-  --shadow:0 4px 24px rgba(0,0,0,.6);
-}
-body.light{
-  --bg:#f4f4f4;
-  --bg2:#ffffff;
-  --bg3:#eaeaea;
-  --hover:#dcdcdc;
-  --border:#cccccc;
-  --text:#111111;
-  --dim:#595959;
-  --accent:#111111;
-  --accent2:#333333;
-  --accent-text:#ffffff;
-  --user:#1a1a1a;
-  --user-text:#ffffff;
-  --bot:#ffffff;
-  --danger:#404040;
-  --shadow:0 4px 24px rgba(0,0,0,.08);
-}
-*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
-body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;transition:background .2s,color .2s}
-.sidebar{width:260px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:transform .3s,margin-right .3s;flex-shrink:0}
-.sidebar.hidden{margin-right:-260px}
-.sidebar-header{padding:16px}
-.new-chat-btn{width:100%;padding:12px;background:var(--accent);color:var(--accent-text);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;transition:background .2s}
-.new-chat-btn:hover{background:var(--accent2)}
-.chat-list{flex:1;overflow-y:auto;padding:8px}
-.chat-item{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:background .15s}
-.chat-item:hover{background:var(--hover)}.chat-item.active{background:var(--bg3);border:1px solid var(--border)}
-.chat-item-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
-.chat-item-del{background:none;border:none;color:var(--dim);cursor:pointer;padding:4px;border-radius:4px;opacity:0;transition:opacity .15s,color .15s;font-family:inherit;font-size:12px}
-.chat-item:hover .chat-item-del{opacity:1}.chat-item-del:hover{color:var(--text)}
-.sidebar-footer{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
-.sidebar-footer button{flex:1;padding:10px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:background .15s}
-.sidebar-footer button:hover{background:var(--hover)}
-.main{flex:1;display:flex;flex-direction:column;min-width:0}
-.topbar{height:60px;padding:0 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
-.icon-btn{background:none;border:1px solid transparent;color:var(--text);cursor:pointer;padding:8px 12px;border-radius:8px;font-size:16px;font-family:inherit;transition:background .15s}
-.icon-btn:hover{background:var(--hover);border-color:var(--border)}
-.model-select{flex:1;max-width:340px;padding:8px 12px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;outline:none}
-.messages{flex:1;overflow-y:auto;padding:24px 16px;display:flex;flex-direction:column;gap:20px}
-.message{display:flex;gap:12px;max-width:820px;width:100%;margin:0 auto;animation:fade .3s ease}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
-.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
-.message.user .avatar{background:var(--user);color:var(--user-text)}
-.message.assistant .avatar{background:var(--bg3);color:var(--text)}
-.message-content{flex:1;min-width:0;padding:12px 16px;border-radius:12px;line-height:1.75;font-size:15px;word-wrap:break-word;overflow-wrap:break-word}
-.message.user .message-content{background:var(--user);color:var(--user-text);border:1px solid var(--border)}
-.message.assistant .message-content{background:var(--bot);border:1px solid var(--border)}
-.message-content p{margin:8px 0}.message-content p:first-child{margin-top:0}.message-content p:last-child{margin-bottom:0}
-.message-content pre{background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0;direction:ltr;text-align:left;position:relative;color:#e5e5e5}
-.message-content code{font-family:'Fira Code',Consolas,monospace;font-size:13px;direction:ltr;unicode-bidi:embed}
-.message-content :not(pre)>code{background:rgba(128,128,128,.2);padding:2px 6px;border-radius:4px}
-.message-content ul,.message-content ol{padding-right:24px;margin:8px 0}
-.message-content a{color:var(--text);text-decoration:underline}
-.message-content blockquote{border-right:3px solid var(--dim);padding-right:12px;margin:10px 0;color:var(--dim)}
-.code-copy{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;opacity:0;transition:opacity .15s;font-family:inherit}
-.message-content pre:hover .code-copy{opacity:1}
-.cursor::after{content:'|';color:var(--text);animation:blink 1s infinite;margin-right:2px}
-@keyframes blink{50%{opacity:0}}
-.error-banner{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:8px;font-size:14px}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
-.agent-avatar-large{
-  width:110px;height:110px;border-radius:50%;
-  background:var(--bg3);border:2px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;font-weight:700;margin-bottom:18px;overflow:hidden;
-  box-shadow:var(--shadow);
-  animation:agentFloat 3s ease-in-out infinite;
-}
-.agent-avatar-large img{width:100%;height:100%;object-fit:cover;filter:grayscale(100%)}
-@keyframes agentFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.empty-title{font-size:28px;font-weight:800;margin-bottom:8px;color:var(--text)}
-.empty-subtitle{color:var(--dim);font-size:15px;margin-bottom:8px;line-height:1.7;max-width:520px}
-.welcome-list{color:var(--dim);font-size:14px;margin:14px 0 28px;text-align:right;max-width:440px;line-height:1.9}
-.welcome-list li{list-style:none;padding-right:4px}
-.welcome-list li::before{content:'—';color:var(--text);margin-left:8px;font-size:12px}
-.agent-signature{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:12px;color:var(--dim);margin-top:10px;
-  padding:6px 14px;border-radius:20px;
-  background:var(--bg3);border:1px solid var(--border);
-  letter-spacing:.3px;
-}
-.agent-signature img{width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--border);filter:grayscale(100%)}
-.agent-signature strong{color:var(--text);font-weight:700}
-.suggestions{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:640px;width:100%}
-.suggestion{padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:right;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .15s,background .15s}
-.suggestion:hover{border-color:var(--text);background:var(--hover)}
-.input-area{padding:16px;border-top:1px solid var(--border);background:var(--bg2)}
-.input-form{max-width:820px;margin:0 auto;display:flex;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px;transition:border-color .15s}
-.input-form:focus-within{border-color:var(--text)}
-.input-form textarea{flex:1;background:none;border:none;color:var(--text);font-size:15px;font-family:inherit;resize:none;outline:none;padding:8px;max-height:200px;min-height:24px;line-height:1.5}
-.send-btn{background:var(--accent);color:var(--accent-text);border:1px solid var(--border);border-radius:8px;padding:0 16px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;transition:background .15s,opacity .15s;flex-shrink:0}
-.send-btn:hover:not(:disabled){background:var(--accent2)}.send-btn:disabled{opacity:.5;cursor:not-allowed}
-.footer-note{text-align:center;font-size:11px;color:var(--dim);margin-top:8px}
-dialog{border:1px solid var(--border);background:var(--bg2);color:var(--text);border-radius:16px;padding:24px;max-width:480px;width:calc(100% - 32px);font-family:inherit}
-dialog::backdrop{background:rgba(0,0,0,.75);backdrop-filter:blur(4px)}
-dialog h2{margin-bottom:16px;font-size:20px}
-.dialog-field{margin-bottom:16px}
-.dialog-field label{display:block;margin-bottom:6px;font-size:13px;color:var(--dim)}
-.dialog-field input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:8px;font-family:inherit;font-size:14px;outline:none;direction:ltr;text-align:left}
-.dialog-field input:focus{border-color:var(--text)}
-.dialog-hint{font-size:12px;color:var(--dim);margin-top:6px}
-.dialog-actions{display:flex;gap:8px;justify-content:flex-start;margin-top:20px}
-.btn{padding:10px 20px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:inherit;font-size:14px;transition:background .15s}
-.btn:hover{background:var(--hover)}.btn-primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}.btn-primary:hover{background:var(--accent2)}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المساعد المحاسبي والمخزني الذكي - ERP</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --secondary: #334155;
+      --secondary-hover: #1e293b;
+      --border: #e2e8f0;
+      --user-bg: #e0f2fe;
+      --bot-bg: #f8fafc;
+      --success-bg: #ecfdf5;
+      --success-border: #10b981;
+      --error-bg: #fef2f2;
+      --error-border: #ef4444;
+    }
 
-/* بطاقات المقترحات التفاعلية بألوان أحادية (أسود / رمادي / أبيض) */
-.proposal-card{
-  background:var(--bg2);
-  border:1px solid var(--border);
-  padding:14px;
-  border-radius:10px;
-  margin-top:12px;
-}
-.proposal-title{
-  font-weight:700;
-  color:var(--text);
-  margin-bottom:8px;
-  padding-bottom:6px;
-  border-bottom:1px solid var(--border);
-  font-size:14px;
-}
-.proposal-body{
-  color:var(--text);
-  font-size:13px;
-  background:var(--bg3);
-  border:1px solid var(--border);
-  padding:10px;
-  border-radius:8px;
-  margin-bottom:12px;
-  line-height:1.7;
-}
-.proposal-row{
-  display:flex;
-  justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  padding:4px 0;
-  font-size:12px;
-}
-.proposal-row:last-child{border-bottom:none}
-.proposal-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-approve{
-  background:var(--accent);
-  color:var(--accent-text);
-  border:1px solid var(--border);
-  padding:8px 16px;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:700;
-  font-size:13px;
-  font-family:inherit;
-  transition:background .15s;
-}
-.btn-approve:hover:not(:disabled){background:var(--accent2)}
-.btn-approve:disabled{opacity:.5;cursor:not-allowed}
-.btn-reject{
-  background:var(--bg3);
-  color:var(--dim);
-  border:1px solid var(--border);
-  padding:8px 16px;
-  border-radius:6px;
-  cursor:pointer;
-  font-size:13px;
-  font-family:inherit;
-  transition:background .15s,color .15s;
-}
-.btn-reject:hover{background:var(--hover);color:var(--text)}
-.proposal-status{
-  color:var(--text);
-  font-weight:700;
-  font-size:13px;
-  padding:10px;
-  background:var(--bg3);
-  border:1px solid var(--border);
-  border-radius:6px;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--hover)}
-@media (max-width:768px){
-  .sidebar{position:fixed;top:0;right:0;bottom:0;z-index:100;box-shadow:var(--shadow)}
-  .sidebar.hidden{margin-right:0;transform:translateX(100%)}
-  .empty-title{font-size:22px}.messages{padding:16px 12px}
-  .agent-avatar-large{width:90px;height:90px}
-}
-</style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .app-container {
+      max-width: 920px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+
+    .header small {
+      color: var(--muted);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .worker-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .worker-bar label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .worker-bar input {
+      flex: 1;
+      min-width: 240px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      direction: ltr;
+      text-align: left;
+    }
+
+    .chat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      min-height: 360px;
+      max-height: 62vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .msg {
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      max-width: 92%;
+    }
+
+    .msg.user {
+      align-self: flex-start;
+      background: var(--user-bg);
+      border-color: #bae6fd;
+    }
+
+    .msg.assistant {
+      align-self: stretch;
+      max-width: 100%;
+      background: var(--bot-bg);
+    }
+
+    .msg-text {
+      white-space: pre-line;
+      font-size: 0.96rem;
+    }
+
+    .proposal-card {
+      margin-top: 12px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .proposal-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .summary-list {
+      margin: 8px 0 12px;
+      padding-right: 20px;
+      font-size: 0.92rem;
+    }
+
+    .summary-list li {
+      margin-bottom: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: 0.15s ease;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: #fff;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--secondary-hover);
+    }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .missing-form {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .field-group input,
+    .field-group select,
+    .field-group textarea {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #fff;
+    }
+
+    .edit-panel {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #94a3b8;
+    }
+
+    .edit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .status-banner {
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .status-success {
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: #065f46;
+    }
+
+    .status-error {
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
+      color: #991b1b;
+    }
+
+    .input-area {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-area textarea {
+      flex: 1;
+      min-height: 54px;
+      max-height: 150px;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+  </style>
 </head>
 <body>
+  <div class="app-container">
+    <div class="header">
+      <div>
+        <h1>المساعد المحاسبي والمخزني الذكي</h1>
+        <small>إدخال طبيعي للقيود والفواتير والحركات المخزنية مع التحقق والتنفيذ الآمن</small>
+      </div>
+      <button class="btn-outline" id="reloadCtxBtn" type="button">تحديث بيانات النظام</button>
 
-<aside class="sidebar hidden" id="sidebar">
-  <div class="sidebar-header">
-    <button class="new-chat-btn" id="newChatBtn">+ محادثة جديدة</button>
-  </div>
-  <div class="chat-list" id="chatList"></div>
-  <div class="sidebar-footer">
-    <button id="settingsBtn">الإعدادات</button>
-    <button id="themeBtn">الوضع الفاتح</button>
-  </div>
-</aside>
+      <div class="worker-bar">
+        <label for="workerUrlInput">رابط Cloudflare Worker:</label>
+        <input
+          type="text"
+          id="workerUrlInput"
+          placeholder="https://your-worker.workers.dev"
+        />
+      </div>
+    </div>
 
-<main class="main">
-  <header class="topbar">
-    <button class="icon-btn" id="toggleSidebar" title="القائمة">القائمة</button>
-    <select class="model-select" id="modelSelect"></select>
-  </header>
-  <div class="messages" id="messages"></div>
-  <div class="input-area">
-    <form class="input-form" id="chatForm">
-      <textarea id="input" rows="1" placeholder="اكتب رسالتك هنا... (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
-      <button type="submit" class="send-btn" id="sendBtn">إرسال</button>
+    <div class="chat-box" id="chatBox">
+      <div class="msg assistant">
+        <div class="msg-text">
+          أهلاً بك. اكتب العملية المحاسبية أو المخزنية أو الفاتورة بلغة عادية (مثلاً: شراء أصناف، بيع آجل، سداد لمورد، أو صرف مخزني)، وسأطرح سؤالاً إذا كان هناك نقص، أو أعرض لك ملخص العملية مع أزرار التعديل والتنفيذ.
+        </div>
+      </div>
+    </div>
+
+    <form class="input-area" id="promptForm">
+      <textarea
+        id="promptInput"
+        placeholder="اكتب طلبك هنا... مثال: اشترينا 100 قطعة بسعر 10 ليرات من مورد الأمل على الحساب للمستودع الرئيسي"
+        required
+      ></textarea>
+      <button class="btn-primary" id="sendBtn" type="submit">إرسال</button>
     </form>
-    <div class="footer-note">مدعوم بـ OpenRouter عبر Cloudflare Worker</div>
   </div>
-</main>
 
-<dialog id="settingsDialog">
-  <h2>الإعدادات</h2>
-  <div class="dialog-field">
-    <label for="backendUrlInput">رابط الخادم الوسيط (Worker URL)</label>
-    <input type="url" id="backendUrlInput" placeholder="https://your-worker.workers.dev">
-    <div class="dialog-hint">الصق رابط الـ Worker الذي نشرته على Cloudflare. يبدأ عادةً بـ https://</div>
-  </div>
-  <div class="dialog-field">
-    <label for="companyIdInput">معرّف الشركة (Company UUID)</label>
-    <input type="text" id="companyIdInput" placeholder="00000000-0000-0000-0000-000000000000">
-    <div class="dialog-hint">معرّف الشركة لعزل البيانات (Multi-tenant RLS)</div>
-  </div>
-  <div class="dialog-actions">
-    <button class="btn btn-primary" id="saveSettings">حفظ</button>
-    <button class="btn" id="cancelSettings">إلغاء</button>
-  </div>
-</dialog>
+  <script>
+    const WORKER_STORAGE_KEY = "erp_worker_url_v1";
+    const DEFAULT_WORKER_URL = ""; // ضع رابط الـ Worker هنا إذا أردت تثبيته افتراضياً
 
-<script>
-const BACKEND_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
-const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000000";
+    let erpContext = {
+      accounts: [],
+      warehouses: [],
+      items: [],
+      item_units: [],
+      stock_balances: [],
+      rates: [],
+    };
 
-const AGENT_IMAGE = "assets/me.jpeg";
-const USER_IMAGE  = "assets/user.png";
+    const workerUrlInput = document.getElementById("workerUrlInput");
+    const chatBox = document.getElementById("chatBox");
+    const promptForm = document.getElementById("promptForm");
+    const promptInput = document.getElementById("promptInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const reloadCtxBtn = document.getElementById("reloadCtxBtn");
 
-const DEFAULT_MODEL = 'openrouter/free';
+    // تهيئة رابط الـ Worker
+    workerUrlInput.value =
+      localStorage.getItem(WORKER_STORAGE_KEY) || DEFAULT_WORKER_URL;
 
-const state = {
-  backendUrl: localStorage.getItem('or_backend_url') || BACKEND_URL,
-  companyId: localStorage.getItem('or_company_id') || DEFAULT_COMPANY_ID,
-  model: localStorage.getItem('or_model') || DEFAULT_MODEL,
-  chats: JSON.parse(localStorage.getItem('or_chats') || '[]'),
-  activeChatId: localStorage.getItem('or_active_chat') || null,
-  theme: localStorage.getItem('or_theme') || 'dark',
-  isGenerating: false,
-};
-
-const $ = (id) => document.getElementById(id);
-const messagesEl = $('messages');
-const chatListEl = $('chatList');
-const inputEl = $('input');
-const sendBtn = $('sendBtn');
-const modelSelect = $('modelSelect');
-const sidebar = $('sidebar');
-const settingsDialog = $('settingsDialog');
-
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
-function escapeHtml(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
-function renderMarkdown(text){
-  if(typeof marked==='undefined') return escapeHtml(text).replace(/\n/g,'<br>');
-  const html=marked.parse(text,{breaks:true,gfm:true});
-  return typeof DOMPurify==='undefined'?html:DOMPurify.sanitize(html);
-}
-function saveState(){
-  localStorage.setItem('or_chats',JSON.stringify(state.chats));
-  localStorage.setItem('or_active_chat',state.activeChatId||'');
-  localStorage.setItem('or_model',state.model);
-  localStorage.setItem('or_backend_url',state.backendUrl);
-  localStorage.setItem('or_company_id',state.companyId);
-  localStorage.setItem('or_theme',state.theme);
-}
-function getActiveChat(){return state.chats.find(c=>c.id===state.activeChatId)}
-function ensureActiveChat(){
-  let c=getActiveChat();
-  if(!c){c={id:uid(),title:'محادثة جديدة',messages:[],createdAt:Date.now()};state.chats.unshift(c);state.activeChatId=c.id;saveState()}
-  return c;
-}
-function applyTheme(){
-  document.body.classList.toggle('light',state.theme==='light');
-  $('themeBtn').textContent = state.theme==='light'?'الوضع الداكن':'الوضع الفاتح';
-}
-
-async function renderModelSelect() {
-  modelSelect.innerHTML = '<option value="openrouter/free">تلقائي (Free Router - موصى به)</option>';
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const freeModels = (data.data || []).filter(m => {
-      const p = m.pricing || {};
-      return String(p.prompt) === '0' && String(p.completion) === '0';
-    });
-    for (const m of freeModels) {
-      if (m.id === 'openrouter/free') continue;
-      const opt = document.createElement('option');
-      opt.value = m.id;
-      opt.textContent = m.name || m.id;
-      modelSelect.appendChild(opt);
-    }
-  } catch (e) {
-    console.warn('تعذر تحميل قائمة النماذج المجانية، سيتم استخدام openrouter/free فقط.', e);
-  }
-  if (modelSelect.querySelector(`option[value="${CSS.escape(state.model)}"]`)) {
-    modelSelect.value = state.model;
-  } else {
-    modelSelect.value = 'openrouter/free';
-    state.model = 'openrouter/free';
-    saveState();
-  }
-}
-
-function renderChatList(){
-  chatListEl.innerHTML='';
-  if(!state.chats.length){
-    chatListEl.innerHTML='<div style="padding:16px;color:var(--dim);font-size:13px;text-align:center">لا توجد محادثات</div>';
-    return;
-  }
-  for(const chat of state.chats){
-    const item=document.createElement('div');
-    item.className='chat-item'+(chat.id===state.activeChatId?' active':'');
-    item.innerHTML=`<span class="chat-item-title">${escapeHtml(chat.title||'محادثة')}</span><button class="chat-item-del" title="حذف">حذف</button>`;
-    item.querySelector('.chat-item-title').addEventListener('click',()=>switchChat(chat.id));
-    item.querySelector('.chat-item-del').addEventListener('click',(e)=>{e.stopPropagation();deleteChat(chat.id)});
-    chatListEl.appendChild(item);
-  }
-}
-
-function createMessageEl(role){
-  const d=document.createElement('div');
-  d.className='message '+role;
-  const isUser = role === 'user';
-  const src = isUser ? USER_IMAGE : AGENT_IMAGE;
-  const fallback = isUser ? 'أنت' : 'AI';
-  d.innerHTML = `
-    <div class="avatar">
-      <img src="${src}" alt="${isUser?'المستخدم':'الوكيل الذكي'}"
-           onerror="this.style.display='none';this.parentElement.textContent='${fallback}'">
-    </div>
-    <div class="message-content"></div>`;
-  return d;
-}
-
-function postProcessCode(container){
-  container.querySelectorAll('pre').forEach(pre=>{
-    if(pre.querySelector('.code-copy')) return;
-    const btn=document.createElement('button');
-    btn.className='code-copy';btn.textContent='نسخ';
-    btn.addEventListener('click',()=>{
-      const code=pre.querySelector('code')?.innerText||pre.innerText;
-      navigator.clipboard.writeText(code).then(()=>{btn.textContent='تم النسخ';setTimeout(()=>btn.textContent='نسخ',1500)});
-    });
-    pre.appendChild(btn);
-  });
-  container.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b)}catch(e){}});
-}
-
-// دالة تحليل ومعالجة مقترحات الـ AI التفاعلية المتوافقة مع المخطط المحاسبي الجديد
-function parseAndRenderProposal(assistantContentElement, textContent){
-  const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```/);
-  if (!jsonMatch) return;
-
-  try {
-    const proposal = JSON.parse(jsonMatch[1]);
-    // إرفاق معرف الشركة تلقائياً لكل مقترح
-    proposal.company_id = state.companyId;
-
-    const supportedActions = [
-      'propose_entry',
-      'propose_integrated_transaction',
-      'propose_warehouse',
-      'propose_item',
-      'propose_account',
-      'propose_partner',
-      'propose_update_item',
-      'propose_update_account',
-      'propose_update_warehouse',
-      'propose_soft_delete'
-    ];
-    if (!supportedActions.includes(proposal.action)) return;
-
-    const cleanText = textContent.replace(jsonMatch[0], '');
-    assistantContentElement.innerHTML = renderMarkdown(cleanText);
-
-    const proposalBox = document.createElement('div');
-    proposalBox.className = 'proposal-card';
-
-    // 1. مقترح قيد محاسبي
-    if (proposal.action === 'propose_entry') {
-      const currencyBadge = proposal.currency_code ? ` | <strong>العملة:</strong> ${escapeHtml(proposal.currency_code)}` : '';
-      proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح قيد يومية (قيد مزدوج)</div>
-        <div class="proposal-body">
-          <div><strong>البيان:</strong> ${escapeHtml(proposal.description)}</div>
-          <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)}${currencyBadge}</div>
-          <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">أطراف القيد:</div>
-          ${(proposal.lines || []).map(l => `
-            <div class="proposal-row">
-              <span>حساب: ${escapeHtml(l.account_code)} | ${escapeHtml(l.description||'')}</span>
-              <span>مدين: ${l.debit || 0} | دائن: ${l.credit || 0}</span>
-            </div>
-          `).join('')}
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وترحيل القيد</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل...';
-        try {
-          const res = await fetch(`${state.backendUrl}/save-entry`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json();
-          if (res.ok && result.success) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم ترحيل القيد بنجاح (رقم القيد: ${escapeHtml(String(result.entry_id || ''))})</div>`;
-          } else { throw new Error(result.error || 'فشل الحفظ'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ في الترحيل: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 2. مقترح معاملة متكاملة / فاتورة
-    else if (proposal.action === 'propose_integrated_transaction') {
-      const wt = proposal.warehouse_transaction || {};
-      const txCurrency = wt.currency_code || proposal.currency_code || 'SAR';
-      const txTypeLabel = wt.transaction_type === 'IN' ? 'إدخال / شراء' : (wt.transaction_type === 'OUT' ? 'إخراج / بيع' : escapeHtml(wt.transaction_type));
-      proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح معاملة متكاملة (مالي + جرد مستمر)</div>
-        <div class="proposal-body">
-          <div><strong>الوصف:</strong> ${escapeHtml(proposal.description)}</div>
-          <div><strong>التاريخ:</strong> ${escapeHtml(proposal.entry_date)} | <strong>العملة:</strong> ${escapeHtml(txCurrency)}</div>
-          <div><strong>المستودع:</strong> ${escapeHtml(wt.warehouse_code)} | <strong>النوع:</strong> ${txTypeLabel}</div>
-          <div><strong>الصنف:</strong> ${escapeHtml(wt.item_code)} ${wt.item_name ? '(' + escapeHtml(wt.item_name) + ')' : ''} | <strong>الكمية:</strong> ${wt.quantity} | <strong>سعر الوحدة:</strong> ${wt.unit_price}</div>
-          ${proposal.journal_entry?.lines ? `
-            <div style="margin-top:8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px;">القيد المحاسبي التلقائي:</div>
-            ${proposal.journal_entry.lines.map(l => `
-              <div class="proposal-row">
-                <span>حساب: ${escapeHtml(l.account_code)} | ${escapeHtml(l.description||'')}</span>
-                <span>مدين: ${l.debit || 0} | دائن: ${l.credit || 0}</span>
-              </div>
-            `).join('')}
-          ` : ''}
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وترحيل المعاملة</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الترحيل...';
-        try {
-          const res = await fetch(`${state.backendUrl}/save-integrated-transaction`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json();
-          if (res.ok && result.success) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم ترحيل المعاملة بنجاح')}</div>`;
-          } else { throw new Error(result.error || 'فشل الترحيل'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">فشل العملية: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 3. مقترح إضافة مستودع جديد (Warehouses)
-    else if (proposal.action === 'propose_warehouse') {
-      proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح إنشاء مستودع جديد</div>
-        <div class="proposal-body">
-          <div><strong>كود المستودع:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>اسم المستودع:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>العنوان:</strong> ${escapeHtml(proposal.address || 'غير محدد')}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وإنشاء المستودع</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
-        try {
-          const res = await fetch(`${state.backendUrl}/save-warehouse`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && result.success !== false) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ المستودع الجديد بنجاح.')}</div>`;
-          } else { throw new Error(result.error || 'فشل حفظ المستودع'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 4. مقترح تعريف بطاقة مادة جديدة (Items - متوافق مع standard_cost و sale_price)
-    else if (proposal.action === 'propose_item') {
-      proposalBox.innerHTML = `
-        <div class="proposal-title">تعريف بطاقة مادة جديدة</div>
-        <div class="proposal-body">
-          <div><strong>كود المادة:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>اسم المادة:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>التكلفة المعيارية / الشراء:</strong> ${proposal.purchase_price || proposal.standard_cost || 0} | <strong>سعر البيع:</strong> ${proposal.sale_price || 0}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وحفظ بطاقة المادة</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
-        try {
-          const res = await fetch(`${state.backendUrl}/save-item`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && result.success !== false) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ بطاقة المادة في النظام بنجاح.')}</div>`;
-          } else { throw new Error(result.error || JSON.stringify(result)); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 5. مقترح تعديل بطاقة مادة موجودة
-    else if (proposal.action === 'propose_update_item') {
-      proposalBox.innerHTML = `
-        <div class="proposal-title">تعديل بطاقة مادة (كود: ${escapeHtml(proposal.code)})</div>
-        <div class="proposal-body">
-          <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>التكلفة المعيارية:</strong> ${proposal.standard_cost || proposal.purchase_price || '-'} | <strong>سعر البيع:</strong> ${proposal.sale_price || '-'}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وتحديث بطاقة المادة</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
-        try {
-          const res = await fetch(`${state.backendUrl}/update-item`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم تحديث بطاقة المادة بنجاح.</div>`;
-          } else { throw new Error(result.error || 'فشل التحديث'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 6. مقترح إضافة أو تعديل حساب في شجرة الحسابات (Accounts - متوافق مع type و normal)
-    else if (proposal.action === 'propose_update_account' || proposal.action === 'propose_account') {
-      const modeLabel = proposal.action === 'propose_update_account' ? 'تعديل حساب في شجرة الحسابات' : 'إضافة حساب جديد إلى شجرة الحسابات';
-      proposalBox.innerHTML = `
-        <div class="proposal-title">${modeLabel}</div>
-        <div class="proposal-body">
-          <div><strong>كود الحساب:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>اسم الحساب:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>النوع:</strong> ${escapeHtml(proposal.type || 'asset')} | <strong>الرصيد الطبيعي:</strong> ${escapeHtml(proposal.normal || 'debit')}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وحفظ الحساب</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
-        try {
-          const endpoint = proposal.action === 'propose_update_account' ? `${state.backendUrl}/update-account` : `${state.backendUrl}/save-account`;
-          const res = await fetch(endpoint, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم حفظ الحساب في شجرة الحسابات بنجاح.')}</div>`;
-          } else { throw new Error(result.error || 'فشل الحفظ'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 7. مقترح تعديل مستودع
-    else if (proposal.action === 'propose_update_warehouse') {
-      proposalBox.innerHTML = `
-        <div class="proposal-title">تعديل مستودع (كود: ${escapeHtml(proposal.code)})</div>
-        <div class="proposal-body">
-          <div><strong>الاسم الجديد:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>العنوان:</strong> ${escapeHtml(proposal.address || '-')}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وتحديث المستودع</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التحديث...';
-        try {
-          const res = await fetch(`${state.backendUrl}/update-warehouse`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">تم تحديث بيانات المستودع بنجاح.</div>`;
-          } else { throw new Error(result.error || 'فشل التحديث'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 8. مقترح الحذف الناعم (Soft Delete)
-    else if (proposal.action === 'propose_soft_delete') {
-      const targetTypeLabel = proposal.target_type === 'item' ? 'مادة / صنف' : (proposal.target_type === 'warehouse' ? 'مستودع' : 'حساب');
-      proposalBox.innerHTML = `
-        <div class="proposal-title">مقترح حذف ناعم (إلغاء تنشيط) - ${targetTypeLabel}</div>
-        <div class="proposal-body">
-          <div><strong>الكود المستهدف:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>السبب:</strong> ${escapeHtml(proposal.reason || 'إلغاء تنشيط وحذف ناعم')}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد الحذف الناعم</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ التنفيذ...';
-        try {
-          const res = await fetch(`${state.backendUrl}/soft-delete`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && (result.success !== false)) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم تنفيذ الحذف الناعم بنجاح.')}</div>`;
-          } else { throw new Error(result.error || 'فشل تنفيذ الحذف الناعم'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    // 9. مقترح تعريف شريك (عميل / مورد - Partners)
-    else if (proposal.action === 'propose_partner') {
-      const partnerTypeLabel = proposal.type === 'supplier' ? 'مورد' : (proposal.type === 'both' ? 'عميل ومورد' : 'عميل');
-      proposalBox.innerHTML = `
-        <div class="proposal-title">تعريف بطاقة ${partnerTypeLabel} جديد</div>
-        <div class="proposal-body">
-          <div><strong>الكود:</strong> ${escapeHtml(proposal.code)}</div>
-          <div><strong>الاسم:</strong> ${escapeHtml(proposal.name)}</div>
-          <div><strong>الصفة:</strong> ${partnerTypeLabel} | <strong>العملة:</strong> ${escapeHtml(proposal.currency_code || 'SAR')}</div>
-        </div>
-        <div class="proposal-actions">
-          <button id="approve-btn" class="btn-approve">اعتماد وحفظ البطاقة</button>
-          <button id="reject-btn" class="btn-reject">رفض</button>
-        </div>
-      `;
-
-      proposalBox.querySelector('#approve-btn').addEventListener('click', async (e) => {
-        const btn = e.target; btn.disabled = true; btn.textContent = 'جارٍ الحفظ...';
-        try {
-          const res = await fetch(`${state.backendUrl}/save-partner`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(proposal)
-          });
-          const result = await res.json().catch(() => ({}));
-          if (res.ok && result.success !== false) {
-            proposalBox.innerHTML = `<div class="proposal-status">${escapeHtml(result.message || 'تم تعريف وحفظ الشريك بنجاح.')}</div>`;
-          } else { throw new Error(result.error || 'فشل حفظ الشريك'); }
-        } catch (err) {
-          proposalBox.innerHTML = `<div class="proposal-status">خطأ: ${escapeHtml(err.message)}</div>`;
-        }
-      });
-    }
-
-    proposalBox.querySelector('#reject-btn')?.addEventListener('click', () => {
-      proposalBox.innerHTML = `<div class="proposal-status" style="color:var(--dim);font-weight:400;">تم رفض وإلغاء هذا المقترح.</div>`;
+    workerUrlInput.addEventListener("change", () => {
+      localStorage.setItem(WORKER_STORAGE_KEY, workerUrlInput.value.trim());
+      loadContext();
     });
 
-    assistantContentElement.appendChild(proposalBox);
-  } catch (e) {
-    console.warn('خطأ في تحليل مقترح الـ JSON:', e);
-  }
-}
+    reloadCtxBtn.addEventListener("click", () => loadContext(true));
 
-function renderMessages(){
-  messagesEl.innerHTML='';
-  const chat=getActiveChat();
-  if(!chat||!chat.messages.length){renderEmptyState();return}
-  for(const msg of chat.messages){
-    const el=createMessageEl(msg.role);
-    const content=el.querySelector('.message-content');
-    if(msg.role==='assistant'){
-      content.innerHTML=renderMarkdown(msg.content||'');
-      parseAndRenderProposal(content, msg.content||'');
-      postProcessCode(content);
-    }
-    else {
-      content.textContent=msg.content;
-    }
-    messagesEl.appendChild(el);
-  }
-  scrollToBottom();
-}
-
-function renderEmptyState(){
-  messagesEl.innerHTML=`<div class="empty-state">
-    <div class="agent-avatar-large">
-      <img src="${AGENT_IMAGE}" alt="الوكيل الذكي"
-           onerror="this.style.display='none';this.parentElement.textContent='AI'">
-    </div>
-    <div class="empty-title">أهلاً بك في الوكيل الذكي</div>
-    <div class="empty-subtitle">مساعدك المحاسبي ونظام الـ ERP المتكامل — مبني على القيد المزدوج والجرد المستمر</div>
-    <ul class="welcome-list">
-      <li>دعم كامل للمخطط المحاسبي الاحترافي وعزل الشركات (Multi-tenant)</li>
-      <li>تعريف وتعديل المواد، الحسابات الشجرية، المستودعات، والشركاء</li>
-      <li>حماية صارمة للبيانات المالية بدقة numeric(18,4) ومنع التكرار</li>
-    </ul>
-    <div class="agent-signature">
-      <img src="${AGENT_IMAGE}" alt=""
-           onerror="this.style.display='none'">
-      تصميم المبرمج <strong>حمدي إدلبي</strong>
-    </div>
-    <div class="suggestions" style="margin-top:28px">
-      <button class="suggestion" data-prompt="عرّف مادة جديدة باسم شاشة 27 بوصة برمز ITM-101 بسعر بيع 850 وتكلفة 650">تعريف مادة جديدة</button>
-      <button class="suggestion" data-prompt="أضف مستودع جديد برمز WH-02 باسم مستودع المنطقة الشمالية وعنوانه حلب">إضافة مستودع جديد</button>
-      <button class="suggestion" data-prompt="أضف حساب جديد في الشجرة برمز 1105 باسم صندوق المبيعات نوعه asset وطبيعته debit">إضافة حساب للشجرة</button>
-      <button class="suggestion" data-prompt="عرّف عميل جديد برمز CUST-01 باسم شركة الأفق للتجارة">تعريف عميل جديد</button>
-    </div></div>`;
-  messagesEl.querySelectorAll('.suggestion').forEach(b=>{
-    b.addEventListener('click',()=>{inputEl.value=b.dataset.prompt;handleSend()});
-  });
-}
-
-function scrollToBottom(){messagesEl.scrollTop=messagesEl.scrollHeight}
-function newChat(){
-  const chat={id:uid(),title:'محادثة جديدة',messages:[],createdAt:Date.now()};
-  state.chats.unshift(chat);state.activeChatId=chat.id;saveState();
-  renderChatList();renderMessages();
-  if(window.innerWidth<=768) sidebar.classList.add('hidden');
-  inputEl.focus();
-}
-function switchChat(id){
-  state.activeChatId=id;saveState();renderChatList();renderMessages();
-  if(window.innerWidth<=768) sidebar.classList.add('hidden');
-}
-function deleteChat(id){
-  if(!confirm('حذف هذه المحادثة؟')) return;
-  state.chats=state.chats.filter(c=>c.id!==id);
-  if(state.activeChatId===id) state.activeChatId=state.chats[0]?.id||null;
-  saveState();renderChatList();renderMessages();
-}
-
-async function handleSend(){
-  const text=inputEl.value.trim();
-  if(!text||state.isGenerating) return;
-  if(!state.backendUrl){openSettings();return}
-
-  const chat=ensureActiveChat();
-  inputEl.value='';autoResize();
-  state.isGenerating=true;sendBtn.disabled=true;
-
-  chat.messages.push({role:'user',content:text});
-  if(chat.messages.length===1) chat.title=text.slice(0,40)+(text.length>40?'…':'');
-  saveState();
-
-  messagesEl.innerHTML='';
-  for(const msg of chat.messages){
-    const el=createMessageEl(msg.role);
-    const content=el.querySelector('.message-content');
-    if(msg.role==='assistant'){
-      content.innerHTML=renderMarkdown(msg.content||'');
-      parseAndRenderProposal(content, msg.content||'');
-      postProcessCode(content);
-    }
-    else content.textContent=msg.content;
-    messagesEl.appendChild(el);
-  }
-
-  const assistantEl=createMessageEl('assistant');
-  const assistantContent=assistantEl.querySelector('.message-content');
-  assistantContent.classList.add('cursor');
-  messagesEl.appendChild(assistantEl);
-  scrollToBottom();
-
-  const accountingSystemPrompt = {
-    role: 'system',
-    content: `أنت مساعد محاسبي وخبير ERP ذكي تعمل على نظام محاسبي متكامل مبني على القيد المزدوج والجرد المستمر (Perpetual Inventory).
-التزم بالقواعد التالية بدقة:
-- لا تستخدم أي رموز تعبيرية (Emojis) نهائياً في ردودك.
-- التزم بمسميات الحقول المعتمدة في قاعدة البيانات الجديدة:
-  1. لتعريف مادة جديدة:
-\`\`\`json
-{
-  "action": "propose_item",
-  "code": "ITM-001",
-  "name": "اسم المادة",
-  "purchase_price": 0,
-  "sale_price": 0
-}
-\`\`\`
-  2. لتعديل مادة موجودة:
-\`\`\`json
-{
-  "action": "propose_update_item",
-  "code": "ITM-001",
-  "name": "الاسم الجديد",
-  "standard_cost": 0,
-  "sale_price": 0
-}
-\`\`\`
-  3. لإضافة مستودع جديد:
-\`\`\`json
-{
-  "action": "propose_warehouse",
-  "code": "WH-01",
-  "name": "اسم المستودع",
-  "address": "الموقع أو العنوان"
-}
-\`\`\`
-  4. لإضافة حساب جديد لشجرة الحسابات (type: asset/liability/equity/revenue/expense, normal: debit/credit):
-\`\`\`json
-{
-  "action": "propose_account",
-  "code": "1101",
-  "name": "اسم الحساب",
-  "type": "asset",
-  "normal": "debit"
-}
-\`\`\`
-  5. لتعريف عميل أو مورد (type: customer/supplier/both):
-\`\`\`json
-{
-  "action": "propose_partner",
-  "code": "CUST-01",
-  "name": "اسم الشريك",
-  "type": "customer",
-  "currency_code": "SAR"
-}
-\`\`\`
-  6. للحذف الناعم (target_type: item/warehouse/account):
-\`\`\`json
-{
-  "action": "propose_soft_delete",
-  "target_type": "item",
-  "code": "ITM-001",
-  "reason": "سبب الإلغاء"
-}
-\`\`\``
-  };
-
-  const apiMessages=[
-    accountingSystemPrompt,
-    ...chat.messages.map(m=>({role:m.role,content:m.content}))
-  ];
-
-  let fullResponse='';
-
-  try{
-    const response=await fetch(state.backendUrl,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        company_id: state.companyId,
-        model:state.model,
-        messages:apiMessages,
-        stream:true
-      }),
-    });
-
-    if(!response.ok){
-      const errText=await response.text();
-      let errMsg=`HTTP ${response.status}`;
-      try{const j=JSON.parse(errText);errMsg=j.error?.message||j.message||errMsg}
-      catch(e){
-        if(errText.startsWith('<')){
-          errMsg=`الخادم الوسيط أعاد صفحة HTML بدلاً من JSON (HTTP ${response.status}). تحقق من صحة رابط الـ Worker.`;
-        }
+    function getWorkerBaseUrl() {
+      const url = (workerUrlInput.value || "").trim().replace(/\/+$/, "");
+      if (!url) {
+        throw new Error("يرجى إدخال رابط Cloudflare Worker أولاً.");
       }
-      throw new Error(errMsg);
+      localStorage.setItem(WORKER_STORAGE_KEY, url);
+      return url;
     }
 
-    if(!response.body) throw new Error('المتصفح لا يدعم Streaming.');
+    // تنظيف النص من أي كود JSON احتياطاً
+    function sanitizeDisplayText(text) {
+      if (!text) return "";
+      return text
+        .replace(/```json[\s\S]*?```/gi, "")
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/\{[\s\S]*"proposal_type"[\s\S]*\}/g, "")
+        .trim();
+    }
 
-    const reader=response.body.getReader();
-    const decoder=new TextDecoder();
-    let buffer='';
-    let firstChunk=true;
-
-    while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-      buffer+=decoder.decode(value,{stream:true});
-      const lines=buffer.split('\n');
-      buffer=lines.pop()||'';
-      for(const line of lines){
-        const t=line.trim();
-        if(!t.startsWith('data:')) continue;
-        const data=t.slice(5).trim();
-        if(data==='[DONE]') continue;
-        try{
-          const json=JSON.parse(data);
-          const delta=json.choices?.[0]?.delta?.content;
-          if(delta){
-            if(firstChunk){assistantContent.classList.remove('cursor');firstChunk=false}
-            fullResponse+=delta;
-            assistantContent.innerHTML=renderMarkdown(fullResponse);
-            scrollToBottom();
+    async function loadContext(showNotice = false) {
+      try {
+        const baseUrl = getWorkerBaseUrl();
+        const res = await fetch(`${baseUrl}/api/context`);
+        const data = await res.json();
+        if (res.ok && data.ok && data.context) {
+          erpContext = data.context;
+          if (showNotice) {
+            appendSystemBanner("تم تحديث بيانات الحسابات والمستودعات والأصناف بنجاح.", true);
           }
-        }catch(e){}
+        }
+      } catch (err) {
+        if (showNotice) {
+          appendSystemBanner(err.message || "تعذر تحميل بيانات السياق.", false);
+        }
       }
     }
 
-    assistantContent.classList.remove('cursor');
-    assistantContent.innerHTML=renderMarkdown(fullResponse);
-    parseAndRenderProposal(assistantContent, fullResponse);
-    postProcessCode(assistantContent);
-    
-    chat.messages.push({role:'assistant',content:fullResponse});
-    saveState();renderChatList();
+    function appendSystemBanner(message, isSuccess) {
+      const div = document.createElement("div");
+      div.className = `status-banner ${isSuccess ? "status-success" : "status-error"}`;
+      div.textContent = message;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-  }catch(err){
-    assistantContent.classList.remove('cursor');
-    assistantContent.innerHTML='';
-    const b=document.createElement('div');
-    b.className='error-banner';
-    b.textContent='خطأ: '+err.message;
-    assistantContent.appendChild(b);
-  }finally{
-    state.isGenerating=false;sendBtn.disabled=false;inputEl.focus();scrollToBottom();
-  }
-}
+    function appendUserMessage(text) {
+      const msg = document.createElement("div");
+      msg.className = "msg user";
+      const body = document.createElement("div");
+      body.className = "msg-text";
+      body.textContent = text;
+      msg.appendChild(body);
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-function openSettings(){
-  $('backendUrlInput').value=state.backendUrl;
-  $('companyIdInput').value=state.companyId;
-  settingsDialog.showModal();
-}
-function saveSettings(){
-  let url=$('backendUrlInput').value.trim();
-  if(url && !url.startsWith('http')) url='https://'+url;
-  const cid=$('companyIdInput').value.trim() || DEFAULT_COMPANY_ID;
-  state.backendUrl=url;
-  state.companyId=cid;
-  saveState();
-  settingsDialog.close();
-  if(state.backendUrl && getActiveChat()?.messages.length===0) renderMessages();
-}
-function autoResize(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,200)+'px'}
+    async function submitUserPrompt(promptText, originalContextText = "") {
+      const trimmed = (promptText || "").trim();
+      if (!trimmed) return;
 
-async function init(){
-  applyTheme();
-  await renderModelSelect();
-  renderChatList();
-  if(!state.activeChatId && state.chats.length) state.activeChatId=state.chats[0].id;
-  renderMessages();
+      const finalPrompt = originalContextText
+        ? `${originalContextText}\nتحديث واستكمال البيانات: ${trimmed}`
+        : trimmed;
 
-  $('newChatBtn').addEventListener('click',newChat);
-  $('settingsBtn').addEventListener('click',openSettings);
-  $('saveSettings').addEventListener('click',saveSettings);
-  $('cancelSettings').addEventListener('click',()=>settingsDialog.close());
-  $('themeBtn').addEventListener('click',()=>{state.theme=state.theme==='light'?'dark':'light';applyTheme();saveState()});
-  $('toggleSidebar').addEventListener('click',()=>sidebar.classList.toggle('hidden'));
-  modelSelect.addEventListener('change',()=>{state.model=modelSelect.value;saveState()});
-  $('chatForm').addEventListener('submit',(e)=>{e.preventDefault();handleSend()});
-  inputEl.addEventListener('input',autoResize);
-  inputEl.addEventListener('keydown',(e)=>{
-    if(e.key==='Enter' && !e.shiftKey){e.preventDefault();handleSend()}
-  });
+      appendUserMessage(trimmed);
+      sendBtn.disabled = true;
 
-  if(window.innerWidth>768) sidebar.classList.remove('hidden');
-  if(!state.backendUrl) setTimeout(openSettings,400);
-  inputEl.focus();
-}
-init();
-</script>
+      const loadingMsg = document.createElement("div");
+      loadingMsg.className = "msg assistant";
+      loadingMsg.innerHTML = `<div class="msg-text">جاري تحليل الطلب...</div>`;
+      chatBox.appendChild(loadingMsg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const baseUrl = getWorkerBaseUrl();
+        const res = await fetch(`${baseUrl}/api/interpret`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: finalPrompt }),
+        });
+
+        const data = await res.json();
+        loadingMsg.remove();
+
+        if (!res.ok || !data.ok) {
+          appendSystemBanner(data.error || "حدث خطأ أثناء تحليل الطلب.", false);
+          return;
+        }
+
+        renderAssistantTurn(data.reply, data.proposal, finalPrompt);
+      } catch (err) {
+        loadingMsg.remove();
+        appendSystemBanner(err.message || "تعذر الاتصال بالخادم.", false);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    function renderAssistantTurn(rawReply, proposal, sourcePrompt) {
+      const msg = document.createElement("div");
+      msg.className = "msg assistant";
+
+      const cleanText = sanitizeDisplayText(rawReply);
+      const textEl = document.createElement("div");
+      textEl.className = "msg-text";
+      textEl.textContent =
+        cleanText ||
+        (proposal?.proposal_type === "missing_info"
+          ? proposal.question || "يرجى تزويدي بالبيانات الناقصة لإتمام العملية."
+          : "تم تجهيز ملخص العملية للمراجعة.");
+      msg.appendChild(textEl);
+
+      // الحالة 1: بيانات ناقصة -> عرض حقول الإكمال فقط دون كود JSON
+      if (proposal && proposal.proposal_type === "missing_info") {
+        const card = buildMissingInfoCard(proposal, sourcePrompt);
+        msg.appendChild(card);
+      }
+
+      // الحالة 2: عملية جاهزة -> عرض ملخص العمليات + زر التعديل + زر التنفيذ
+      if (proposal && proposal.proposal_type !== "missing_info" && proposal.payload) {
+        const card = buildExecutableProposalCard(proposal, sourcePrompt);
+        msg.appendChild(card);
+      }
+
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function buildMissingInfoCard(proposal, sourcePrompt) {
+      const card = document.createElement("div");
+      card.className = "proposal-card";
+
+      const title = document.createElement("div");
+      title.className = "proposal-title";
+      title.textContent = "إكمال البيانات المطلوبة";
+      card.appendChild(title);
+
+      const fields = Array.isArray(proposal.missing_fields) && proposal.missing_fields.length > 0
+        ? proposal.missing_fields
+        : [{ key: "details", label: "البيانات المطلوبة", type: "text" }];
+
+      const form = document.createElement("div");
+      form.className = "missing-form";
+
+      const inputsMap = {};
+
+      for (const f of fields) {
+        const group = document.createElement("div");
+        group.className = "field-group";
+
+        const lbl = document.createElement("label");
+        lbl.textContent = f.label || f.key;
+        group.appendChild(lbl);
+
+        const input = createSmartFieldInput(f.key, f.type || "text");
+        inputsMap[f.key] = input;
+        group.appendChild(input);
+        form.appendChild(group);
+      }
+
+      card.appendChild(form);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const submitBtn = document.createElement("button");
+      submitBtn.type = "button";
+      submitBtn.className = "btn-primary";
+      submitBtn.textContent = "متابعة وتجهيز العملية";
+      submitBtn.onclick = () => {
+        const parts = [];
+        for (const f of fields) {
+          const val = (inputsMap[f.key]?.value || "").trim();
+          if (val) {
+            parts.push(`${f.label || f.key}: ${val}`);
+          }
+        }
+        if (parts.length === 0) {
+          appendSystemBanner("يرجى إدخال قيمة واحدة على الأقل.", false);
+          return;
+        }
+        submitUserPrompt(parts.join(" ، "), sourcePrompt);
+      };
+
+      actions.appendChild(submitBtn);
+      card.appendChild(actions);
+      return card;
+    }
+
+    function createSmartFieldInput(key, type) {
+      const k = String(key || "").toLowerCase();
+
+      if (k.includes("warehouse") && erpContext.warehouses?.length) {
+        const sel = document.createElement("select");
+        erpContext.warehouses.forEach((w) => {
+          const opt = document.createElement("option");
+          opt.value = w.name;
+          opt.textContent = `${w.name} (${w.code})`;
+          sel.appendChild(opt);
+        });
+        return sel;
+      }
+
+      if (k.includes("account") && erpContext.accounts?.length) {
+        const sel = document.createElement("select");
+        erpContext.accounts
+          .filter((a) => a.is_postable !== false)
+          .forEach((a) => {
+            const opt = document.createElement("option");
+            opt.value = a.name;
+            opt.textContent = `${a.name} (${a.code})`;
+            sel.appendChild(opt);
+          });
+        return sel;
+      }
+
+      const input = document.createElement("input");
+      input.type = type === "number" ? "number" : "text";
+      if (type === "number") {
+        input.step = "any";
+      }
+      return input;
+    }
+
+    function buildExecutableProposalCard(proposal, sourcePrompt) {
+      const card = document.createElement("div");
+      card.className = "proposal-card";
+
+      const typeLabels = {
+        invoice: "فاتورة",
+        journal_entry: "قيد يومي محاسبي",
+        stock_movement: "حركة مخزنية",
+        void_record: "إبطال سجل",
+      };
+
+      const title = document.createElement("div");
+      title.className = "proposal-title";
+      title.textContent = `${proposal.title || "عملية مقترحة"} (${typeLabels[proposal.proposal_type] || proposal.proposal_type})`;
+      card.appendChild(title);
+
+      const summaryList = buildProposalSummaryList(proposal);
+      card.appendChild(summaryList);
+
+      const editPanel = document.createElement("div");
+      editPanel.className = "edit-panel";
+      editPanel.style.display = "none";
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn-secondary";
+      editBtn.textContent = "تعديل";
+
+      const executeBtn = document.createElement("button");
+      executeBtn.type = "button";
+      executeBtn.className = "btn-primary";
+      executeBtn.textContent = proposal.button_label || "تنفيذ العملية";
+
+      editBtn.onclick = () => {
+        const isHidden = editPanel.style.display === "none";
+        if (isHidden) {
+          populateEditPanel(editPanel, proposal, sourcePrompt, () => {
+            // إعادة بناء البطاقة بعد التعديل الفوري
+            const freshCard = buildExecutableProposalCard(proposal, sourcePrompt);
+            card.replaceWith(freshCard);
+          });
+          editPanel.style.display = "block";
+        } else {
+          editPanel.style.display = "none";
+        }
+      };
+
+      executeBtn.onclick = async () => {
+        executeBtn.disabled = true;
+        editBtn.disabled = true;
+        try {
+          const baseUrl = getWorkerBaseUrl();
+          const res = await fetch(`${baseUrl}/api/execute-proposal`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ proposal }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            appendSystemBanner(data.error || "فشل تنفيذ العملية.", false);
+            executeBtn.disabled = false;
+            editBtn.disabled = false;
+            return;
+          }
+
+          appendSystemBanner("تم تنفيذ العملية وترحيلها في قاعدة البيانات بنجاح.", true);
+          executeBtn.textContent = "تم التنفيذ";
+        } catch (err) {
+          appendSystemBanner(err.message || "حدث خطأ أثناء التنفيذ.", false);
+          executeBtn.disabled = false;
+          editBtn.disabled = false;
+        }
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(executeBtn);
+
+      card.appendChild(actions);
+      card.appendChild(editPanel);
+
+      return card;
+    }
+
+    function buildProposalSummaryList(proposal) {
+      const ul = document.createElement("ul");
+      ul.className = "summary-list";
+      const p = proposal.payload || {};
+
+      const addItem = (label, value) => {
+        if (value === undefined || value === null || value === "") return;
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${label}:</strong> ${escapeHtml(String(value))}`;
+        ul.appendChild(li);
+      };
+
+      if (proposal.proposal_type === "invoice") {
+        addItem("النوع", p.invoice_type === "sale" ? "مبيعات" : "مشتريات");
+        addItem("التاريخ", p.invoice_date);
+        addItem("المستودع", p.warehouse_code);
+        addItem("الطرف (مورد/عميل)", p.party_name);
+        addItem("حساب التسوية", p.settlement_account_code);
+        addItem("الحساب المقابل", p.offset_account_code);
+        addItem("العملة", p.currency);
+
+        if (Array.isArray(p.lines) && p.lines.length > 0) {
+          let subtotal = 0;
+          p.lines.forEach((l, idx) => {
+            const qty = Number(l.quantity || 0);
+            const price = Number(l.unit_price ?? l.unit_cost ?? 0);
+            const lineTotal = qty * price;
+            subtotal += lineTotal;
+            addItem(
+              `السطر ${idx + 1}`,
+              `صنف ${l.item_code} | كمية ${qty} ${l.unit_name || ""} × سعر ${price} = ${lineTotal}`
+            );
+          });
+          const net =
+            subtotal -
+            Number(p.discount_amount || 0) +
+            Number(p.tax_amount || 0) +
+            Number(p.extra_expenses || 0);
+          addItem("الإجمالي التقديري", `${net} ${p.currency || ""}`);
+        }
+      } else if (proposal.proposal_type === "journal_entry") {
+        addItem("التاريخ", p.entry_date);
+        addItem("البيان", p.description);
+        addItem("العملة", p.currency);
+
+        if (Array.isArray(p.lines)) {
+          p.lines.forEach((l, idx) => {
+            addItem(
+              `سطر القيد ${idx + 1}`,
+              `حساب ${l.account_code} | مدين: ${Number(l.debit || 0)} | دائن: ${Number(l.credit || 0)}`
+            );
+          });
+        }
+      } else if (proposal.proposal_type === "stock_movement") {
+        addItem("نوع الحركة", p.movement_type === "IN" ? "إدخال مخزني" : "إخراج مخزني");
+        addItem("التاريخ", p.movement_date);
+        addItem("المستودع", p.warehouse_code);
+        addItem("السبب", p.reason);
+
+        if (Array.isArray(p.lines)) {
+          p.lines.forEach((l, idx) => {
+            addItem(
+              `سطر الحركة ${idx + 1}`,
+              `صنف ${l.item_code} | كمية ${l.quantity} ${l.unit_name || ""}`
+            );
+          });
+        }
+      } else if (proposal.proposal_type === "void_record") {
+        addItem("نوع السجل", p.entity_type);
+        addItem("رقم السجل", p.record_id);
+        addItem("سبب الإبطال", p.void_reason);
+      }
+
+      return ul;
+    }
+
+    function populateEditPanel(panel, proposal, sourcePrompt, onSaved) {
+      panel.innerHTML = "";
+      const p = proposal.payload || {};
+
+      const heading = document.createElement("div");
+      heading.style.fontWeight = "700";
+      heading.textContent = "تعديل بيانات العملية قبل التنفيذ";
+      panel.appendChild(heading);
+
+      const grid = document.createElement("div");
+      grid.className = "edit-grid";
+
+      const editableScalarKeys = Object.keys(p).filter(
+        (k) => typeof p[k] !== "object" || p[k] === null
+      );
+
+      const fieldInputs = {};
+      editableScalarKeys.forEach((key) => {
+        const group = document.createElement("div");
+        group.className = "field-group";
+
+        const lbl = document.createElement("label");
+        lbl.textContent = key;
+        group.appendChild(lbl);
+
+        const inp = document.createElement("input");
+        inp.type = typeof p[key] === "number" ? "number" : "text";
+        if (inp.type === "number") inp.step = "any";
+        inp.value = p[key] ?? "";
+        fieldInputs[key] = inp;
+
+        group.appendChild(inp);
+        grid.appendChild(group);
+      });
+
+      panel.appendChild(grid);
+
+      // تعديل مبسط للأسطر إن وُجدت
+      let linesEditor = null;
+      if (Array.isArray(p.lines)) {
+        const linesGroup = document.createElement("div");
+        linesGroup.className = "field-group";
+        linesGroup.style.marginTop = "10px";
+
+        const lLbl = document.createElement("label");
+        lLbl.textContent = "الأسطر (صيغة منظمة لكل سطر)";
+        linesGroup.appendChild(lLbl);
+
+        linesEditor = document.createElement("textarea");
+        linesEditor.rows = 4;
+        linesEditor.style.direction = "ltr";
+        linesEditor.style.textAlign = "left";
+        linesEditor.value = JSON.stringify(p.lines, null, 2);
+        linesGroup.appendChild(linesEditor);
+        panel.appendChild(linesGroup);
+      }
+
+      // خيار إعادة الصياغة عبر المساعد بدلاً من التعديل اليدوي المباشر
+      const reaskGroup = document.createElement("div");
+      reaskGroup.className = "field-group";
+      reaskGroup.style.marginTop = "10px";
+
+      const rLbl = document.createElement("label");
+      rLbl.textContent = "أو اكتب تعديلك بلغتك الطبيعية ليعيد المساعد صياغته:";
+      reaskGroup.appendChild(rLbl);
+
+      const reaskInput = document.createElement("input");
+      reaskInput.type = "text";
+      reaskInput.placeholder = "مثال: اجعل الكمية 150 بدلاً من 100 أو غيّر الحساب إلى الصندوق";
+      reaskGroup.appendChild(reaskInput);
+      panel.appendChild(reaskGroup);
+
+      const btnRow = document.createElement("div");
+      btnRow.className = "actions";
+
+      const saveDirectBtn = document.createElement("button");
+      saveDirectBtn.type = "button";
+      saveDirectBtn.className = "btn-primary";
+      saveDirectBtn.textContent = "حفظ التعديلات";
+      saveDirectBtn.onclick = () => {
+        for (const key of editableScalarKeys) {
+          const rawVal = fieldInputs[key].value;
+          if (rawVal === "") {
+            p[key] = null;
+          } else if (typeof p[key] === "number") {
+            p[key] = Number(rawVal);
+          } else {
+            p[key] = rawVal;
+          }
+        }
+
+        if (linesEditor) {
+          try {
+            const parsedLines = JSON.parse(linesEditor.value);
+            if (!Array.isArray(parsedLines)) {
+              throw new Error("الأسطر يجب أن تكون قائمة.");
+            }
+            p.lines = parsedLines;
+          } catch (e) {
+            appendSystemBanner("تنسيق الأسطر غير صحيح: " + e.message, false);
+            return;
+          }
+        }
+
+        onSaved();
+      };
+
+      const reaskBtn = document.createElement("button");
+      reaskBtn.type = "button";
+      reaskBtn.className = "btn-secondary";
+      reaskBtn.textContent = "إرسال التعديل للمساعد";
+      reaskBtn.onclick = () => {
+        const note = reaskInput.value.trim();
+        if (!note) {
+          appendSystemBanner("اكتب ملاحظة التعديل أولاً.", false);
+          return;
+        }
+        submitUserPrompt(`تعديل على العملية السابقة: ${note}`, sourcePrompt);
+      };
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn-outline";
+      cancelBtn.textContent = "إلغاء";
+      cancelBtn.onclick = () => {
+        panel.style.display = "none";
+      };
+
+      btnRow.appendChild(saveDirectBtn);
+      btnRow.appendChild(reaskBtn);
+      btnRow.appendChild(cancelBtn);
+      panel.appendChild(btnRow);
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    promptForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = promptInput.value.trim();
+      if (!text) return;
+      promptInput.value = "";
+      submitUserPrompt(text);
+    });
+
+    // تحميل السياق تلقائياً عند فتح الصفحة إذا كان الرابط مضبوطاً
+    if (workerUrlInput.value.trim()) {
+      loadContext();
+    }
+  </script>
 </body>
 </html>
