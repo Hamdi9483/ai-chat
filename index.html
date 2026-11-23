@@ -1,26 +1,50 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المساعد المحاسبي والمخزني الذكي - ERP</title>
+  <title>المساعد المحاسبي والمخزني - ERP</title>
   <style>
-    :root {
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --text: #1e293b;
-      --muted: #64748b;
-      --primary: #0f766e;
-      --primary-hover: #115e59;
-      --secondary: #334155;
-      --secondary-hover: #1e293b;
-      --border: #e2e8f0;
-      --user-bg: #e0f2fe;
-      --bot-bg: #f8fafc;
-      --success-bg: #ecfdf5;
-      --success-border: #10b981;
-      --error-bg: #fef2f2;
-      --error-border: #ef4444;
+    :root[data-theme="light"] {
+      --bg-canvas: #eceff1;
+      --bg-surface: #f8fafc;
+      --bg-elevated: #ffffff;
+      --bg-subtle: #e2e8f0;
+      --bg-user: #d1d5db;
+      --text-main: #1f2937;
+      --text-muted: #4b5563;
+      --border-color: #cbd5e1;
+      --accent: #374151;
+      --accent-hover: #111827;
+      --accent-text: #ffffff;
+      --success-bg: #e5e7eb;
+      --success-border: #374151;
+      --success-text: #111827;
+      --error-bg: #f3f4f6;
+      --error-border: #6b7280;
+      --error-text: #1f2937;
+      --shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
+    }
+
+    :root[data-theme="dark"] {
+      --bg-canvas: #121417;
+      --bg-surface: #1b1e23;
+      --bg-elevated: #242830;
+      --bg-subtle: #2f3540;
+      --bg-user: #373d49;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #374151;
+      --accent: #d1d5db;
+      --accent-hover: #ffffff;
+      --accent-text: #111827;
+      --success-bg: #262b34;
+      --success-border: #9ca3af;
+      --success-text: #f9fafb;
+      --error-bg: #22252b;
+      --error-border: #6b7280;
+      --error-text: #e5e7eb;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     * {
@@ -30,23 +54,28 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      line-height: 1.65;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    .app-container {
-      max-width: 920px;
+    .container {
+      max-width: 900px;
       margin: 24px auto;
       padding: 0 16px;
     }
 
-    .header {
-      background: var(--card);
-      border: 1px solid var(--border);
+    .top-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
       border-radius: 14px;
-      padding: 18px 22px;
-      margin-bottom: 16px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .top-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -54,282 +83,286 @@
       flex-wrap: wrap;
     }
 
-    .header h1 {
+    .brand h1 {
       margin: 0;
-      font-size: 1.25rem;
-      color: var(--primary);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
     }
 
-    .header small {
-      color: var(--muted);
-      display: block;
-      margin-top: 4px;
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 0.88rem;
+      color: var(--text-muted);
     }
 
-    .worker-bar {
+    .header-actions {
       display: flex;
       gap: 8px;
       align-items: center;
       flex-wrap: wrap;
-      width: 100%;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed var(--border);
     }
 
-    .worker-bar label {
-      font-size: 0.85rem;
-      color: var(--muted);
+    .worker-row {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .worker-row label {
+      font-size: 0.84rem;
+      color: var(--text-muted);
       font-weight: 600;
     }
 
-    .worker-bar input {
+    .worker-row input {
       flex: 1;
       min-width: 240px;
       padding: 8px 12px;
-      border: 1px solid var(--border);
       border-radius: 8px;
-      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-size: 0.88rem;
       direction: ltr;
       text-align: left;
     }
 
-    .chat-box {
-      background: var(--card);
-      border: 1px solid var(--border);
+    .chat-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
       border-radius: 14px;
       padding: 18px;
       min-height: 360px;
-      max-height: 62vh;
+      max-height: 60vh;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      box-shadow: var(--shadow);
       margin-bottom: 14px;
     }
 
-    .msg {
-      padding: 14px 16px;
+    .bubble {
+      padding: 13px 16px;
       border-radius: 12px;
-      border: 1px solid var(--border);
-      max-width: 92%;
+      border: 1px solid var(--border-color);
     }
 
-    .msg.user {
+    .bubble.user {
+      background: var(--bg-user);
       align-self: flex-start;
-      background: var(--user-bg);
-      border-color: #bae6fd;
+      max-width: 90%;
     }
 
-    .msg.assistant {
+    .bubble.assistant {
+      background: var(--bg-surface);
       align-self: stretch;
-      max-width: 100%;
-      background: var(--bot-bg);
     }
 
-    .msg-text {
+    .bubble-text {
       white-space: pre-line;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
     }
 
-    .proposal-card {
+    .card-box {
       margin-top: 12px;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 14px;
     }
 
-    .proposal-title {
+    .card-title {
       font-weight: 700;
-      color: var(--primary);
+      font-size: 0.98rem;
       margin-bottom: 8px;
-      font-size: 1rem;
+      color: var(--text-main);
     }
 
     .summary-list {
-      margin: 8px 0 12px;
+      margin: 6px 0 12px;
       padding-right: 20px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
+      color: var(--text-main);
     }
 
     .summary-list li {
       margin-bottom: 4px;
     }
 
-    .actions {
-      display: flex;
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 10px;
+      margin-top: 8px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    .edit-box {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
       flex-wrap: wrap;
       margin-top: 10px;
     }
 
     button {
       cursor: pointer;
-      border: none;
       border-radius: 8px;
-      padding: 9px 16px;
-      font-size: 0.92rem;
+      padding: 8px 15px;
+      font-size: 0.9rem;
       font-weight: 600;
+      font-family: inherit;
+      border: 1px solid transparent;
       transition: 0.15s ease;
     }
 
     button:disabled {
-      opacity: 0.6;
+      opacity: 0.55;
       cursor: not-allowed;
     }
 
     .btn-primary {
-      background: var(--primary);
-      color: #fff;
+      background: var(--accent);
+      color: var(--accent-text);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: var(--primary-hover);
+      background: var(--accent-hover);
     }
 
-    .btn-secondary {
-      background: var(--secondary);
-      color: #fff;
+    .btn-ghost {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border-color: var(--border-color);
     }
 
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--secondary-hover);
-    }
-
-    .btn-outline {
-      background: #fff;
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .missing-form {
-      margin-top: 10px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-    }
-
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .field-group label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .field-group input,
-    .field-group select,
-    .field-group textarea {
-      padding: 8px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-family: inherit;
-      background: #fff;
-    }
-
-    .edit-panel {
-      margin-top: 12px;
-      padding: 14px;
-      border-radius: 10px;
-      background: #f8fafc;
-      border: 1px solid #94a3b8;
-    }
-
-    .edit-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .status-banner {
-      margin-top: 10px;
+    .banner {
       padding: 10px 14px;
       border-radius: 8px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
+      border: 1px solid;
     }
 
-    .status-success {
+    .banner.ok {
       background: var(--success-bg);
-      border: 1px solid var(--success-border);
-      color: #065f46;
+      border-color: var(--success-border);
+      color: var(--success-text);
     }
 
-    .status-error {
+    .banner.err {
       background: var(--error-bg);
-      border: 1px solid var(--error-border);
-      color: #991b1b;
+      border-color: var(--error-border);
+      color: var(--error-text);
     }
 
-    .input-area {
-      background: var(--card);
-      border: 1px solid var(--border);
+    .composer {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-color);
       border-radius: 14px;
-      padding: 14px;
+      padding: 12px 14px;
       display: flex;
       gap: 10px;
       align-items: flex-end;
+      box-shadow: var(--shadow);
     }
 
-    .input-area textarea {
+    .composer textarea {
       flex: 1;
-      min-height: 54px;
+      min-height: 52px;
       max-height: 150px;
       padding: 10px 12px;
-      border: 1px solid #cbd5e1;
       border-radius: 10px;
-      font-size: 0.95rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
       font-family: inherit;
+      font-size: 0.95rem;
       resize: vertical;
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <div class="header">
-      <div>
-        <h1>المساعد المحاسبي والمخزني الذكي</h1>
-        <small>إدخال طبيعي للقيود والفواتير والحركات المخزنية مع التحقق والتنفيذ الآمن</small>
-      </div>
-      <button class="btn-outline" id="reloadCtxBtn" type="button">تحديث بيانات النظام</button>
-
-      <div class="worker-bar">
-        <label for="workerUrlInput">رابط Cloudflare Worker:</label>
-        <input
-          type="text"
-          id="workerUrlInput"
-          placeholder="https://your-worker.workers.dev"
-        />
-      </div>
-    </div>
-
-    <div class="chat-box" id="chatBox">
-      <div class="msg assistant">
-        <div class="msg-text">
-          أهلاً بك. اكتب العملية المحاسبية أو المخزنية أو الفاتورة بلغة عادية (مثلاً: شراء أصناف، بيع آجل، سداد لمورد، أو صرف مخزني)، وسأطرح سؤالاً إذا كان هناك نقص، أو أعرض لك ملخص العملية مع أزرار التعديل والتنفيذ.
+  <div class="container">
+    <header class="top-card">
+      <div class="top-row">
+        <div class="brand">
+          <h1>المساعد المحاسبي والمخزني</h1>
+          <p>إدخال طبيعي للقيود والفواتير والحركات المخزنية مع التحقق والتنفيذ</p>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn-ghost" id="themeToggleBtn">الوضع الليلي</button>
+          <button type="button" class="btn-ghost" id="refreshCtxBtn">تحديث البيانات</button>
         </div>
       </div>
-    </div>
 
-    <form class="input-area" id="promptForm">
+      <div class="worker-row">
+        <label for="workerUrl">رابط Cloudflare Worker:</label>
+        <input
+          type="text"
+          id="workerUrl"
+          placeholder="https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev"
+        />
+      </div>
+    </header>
+
+    <main class="chat-panel" id="chatPanel">
+      <div class="bubble assistant">
+        <div class="bubble-text">
+          أهلاً بك. اكتب العملية المحاسبية أو المخزنية أو الفاتورة بلغة عادية؛ سأطرح سؤالاً إذا كانت هناك بيانات ناقصة، أو أعرض لك ملخص العملية مع أزرار التعديل والتنفيذ.
+        </div>
+      </div>
+    </main>
+
+    <form class="composer" id="composerForm">
       <textarea
-        id="promptInput"
+        id="userInput"
         placeholder="اكتب طلبك هنا... مثال: اشترينا 100 قطعة بسعر 10 ليرات من مورد الأمل على الحساب للمستودع الرئيسي"
         required
       ></textarea>
-      <button class="btn-primary" id="sendBtn" type="submit">إرسال</button>
+      <button type="submit" class="btn-primary" id="sendBtn">إرسال</button>
     </form>
   </div>
 
   <script>
-    const WORKER_STORAGE_KEY = "erp_worker_url_v1";
-    const DEFAULT_WORKER_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev"; // ضع رابط الـ Worker هنا إذا أردت تثبيته افتراضياً
+    const THEME_KEY = "erp_ui_theme_v1";
+    const WORKER_KEY = "erp_worker_url_v1";
+    const DEFAULT_WORKER_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
 
     let erpContext = {
       accounts: [],
@@ -340,35 +373,45 @@
       rates: [],
     };
 
-    const workerUrlInput = document.getElementById("workerUrlInput");
-    const chatBox = document.getElementById("chatBox");
-    const promptForm = document.getElementById("promptForm");
-    const promptInput = document.getElementById("promptInput");
+    const htmlRoot = document.documentElement;
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const refreshCtxBtn = document.getElementById("refreshCtxBtn");
+    const workerUrlInput = document.getElementById("workerUrl");
+    const chatPanel = document.getElementById("chatPanel");
+    const composerForm = document.getElementById("composerForm");
+    const userInput = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
-    const reloadCtxBtn = document.getElementById("reloadCtxBtn");
 
-    // تهيئة رابط الـ Worker
-    workerUrlInput.value =
-      localStorage.getItem(WORKER_STORAGE_KEY) || DEFAULT_WORKER_URL;
+    function applyTheme(theme) {
+      const mode = theme === "dark" ? "dark" : "light";
+      htmlRoot.setAttribute("data-theme", mode);
+      localStorage.setItem(THEME_KEY, mode);
+      themeToggleBtn.textContent = mode === "dark" ? "الوضع النهاري" : "الوضع الليلي";
+    }
 
+    themeToggleBtn.addEventListener("click", () => {
+      const current = htmlRoot.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
+    applyTheme(localStorage.getItem(THEME_KEY) || "light");
+
+    workerUrlInput.value = localStorage.getItem(WORKER_KEY) || DEFAULT_WORKER_URL;
     workerUrlInput.addEventListener("change", () => {
-      localStorage.setItem(WORKER_STORAGE_KEY, workerUrlInput.value.trim());
+      localStorage.setItem(WORKER_KEY, workerUrlInput.value.trim());
       loadContext();
     });
 
-    reloadCtxBtn.addEventListener("click", () => loadContext(true));
+    refreshCtxBtn.addEventListener("click", () => loadContext(true));
 
-    function getWorkerBaseUrl() {
-      const url = (workerUrlInput.value || "").trim().replace(/\/+$/, "");
-      if (!url) {
-        throw new Error("يرجى إدخال رابط Cloudflare Worker أولاً.");
-      }
-      localStorage.setItem(WORKER_STORAGE_KEY, url);
-      return url;
+    function getWorkerUrl() {
+      const raw = (workerUrlInput.value || "").trim().replace(/\/+$/, "");
+      if (!raw) throw new Error("يرجى إدخال رابط Cloudflare Worker.");
+      localStorage.setItem(WORKER_KEY, raw);
+      return raw;
     }
 
-    // تنظيف النص من أي كود JSON احتياطاً
-    function sanitizeDisplayText(text) {
+    function sanitizeReply(text) {
       if (!text) return "";
       return text
         .replace(/```json[\s\S]*?```/gi, "")
@@ -377,524 +420,410 @@
         .trim();
     }
 
-    async function loadContext(showNotice = false) {
+    function addBanner(text, ok) {
+      const el = document.createElement("div");
+      el.className = `banner ${ok ? "ok" : "err"}`;
+      el.textContent = text;
+      chatPanel.appendChild(el);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
+    }
+
+    function addUserBubble(text) {
+      const el = document.createElement("div");
+      el.className = "bubble user";
+      const body = document.createElement("div");
+      body.className = "bubble-text";
+      body.textContent = text;
+      el.appendChild(body);
+      chatPanel.appendChild(el);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
+    }
+
+    async function loadContext(notify = false) {
       try {
-        const baseUrl = getWorkerBaseUrl();
-        const res = await fetch(`${baseUrl}/api/context`);
+        const base = getWorkerUrl();
+        const res = await fetch(`${base}/api/context`);
         const data = await res.json();
         if (res.ok && data.ok && data.context) {
           erpContext = data.context;
-          if (showNotice) {
-            appendSystemBanner("تم تحديث بيانات الحسابات والمستودعات والأصناف بنجاح.", true);
-          }
+          if (notify) addBanner("تم تحديث البيانات بنجاح.", true);
         }
       } catch (err) {
-        if (showNotice) {
-          appendSystemBanner(err.message || "تعذر تحميل بيانات السياق.", false);
-        }
+        if (notify) addBanner(err.message || "تعذر تحديث البيانات.", false);
       }
     }
 
-    function appendSystemBanner(message, isSuccess) {
-      const div = document.createElement("div");
-      div.className = `status-banner ${isSuccess ? "status-success" : "status-error"}`;
-      div.textContent = message;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    async function sendPrompt(text, baseContextText = "") {
+      const clean = (text || "").trim();
+      if (!clean) return;
 
-    function appendUserMessage(text) {
-      const msg = document.createElement("div");
-      msg.className = "msg user";
-      const body = document.createElement("div");
-      body.className = "msg-text";
-      body.textContent = text;
-      msg.appendChild(body);
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+      const combinedPrompt = baseContextText
+        ? `${baseContextText}\nاستكمال وتوضيح: ${clean}`
+        : clean;
 
-    async function submitUserPrompt(promptText, originalContextText = "") {
-      const trimmed = (promptText || "").trim();
-      if (!trimmed) return;
-
-      const finalPrompt = originalContextText
-        ? `${originalContextText}\nتحديث واستكمال البيانات: ${trimmed}`
-        : trimmed;
-
-      appendUserMessage(trimmed);
+      addUserBubble(clean);
       sendBtn.disabled = true;
 
-      const loadingMsg = document.createElement("div");
-      loadingMsg.className = "msg assistant";
-      loadingMsg.innerHTML = `<div class="msg-text">جاري تحليل الطلب...</div>`;
-      chatBox.appendChild(loadingMsg);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      const pending = document.createElement("div");
+      pending.className = "bubble assistant";
+      pending.innerHTML = `<div class="bubble-text">جاري المعالجة...</div>`;
+      chatPanel.appendChild(pending);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
 
       try {
-        const baseUrl = getWorkerBaseUrl();
-        const res = await fetch(`${baseUrl}/api/interpret`, {
+        const base = getWorkerUrl();
+        const res = await fetch(`${base}/api/interpret`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: finalPrompt }),
+          body: JSON.stringify({ prompt: combinedPrompt }),
         });
-
         const data = await res.json();
-        loadingMsg.remove();
+        pending.remove();
 
         if (!res.ok || !data.ok) {
-          appendSystemBanner(data.error || "حدث خطأ أثناء تحليل الطلب.", false);
+          addBanner(data.error || "حدث خطأ أثناء المعالجة.", false);
           return;
         }
 
-        renderAssistantTurn(data.reply, data.proposal, finalPrompt);
+        renderAssistant(data.reply, data.proposal, combinedPrompt);
       } catch (err) {
-        loadingMsg.remove();
-        appendSystemBanner(err.message || "تعذر الاتصال بالخادم.", false);
+        pending.remove();
+        addBanner(err.message || "تعذر الاتصال بالخادم.", false);
       } finally {
         sendBtn.disabled = false;
       }
     }
 
-    function renderAssistantTurn(rawReply, proposal, sourcePrompt) {
-      const msg = document.createElement("div");
-      msg.className = "msg assistant";
+    function renderAssistant(rawReply, proposal, sourcePrompt) {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble assistant";
 
-      const cleanText = sanitizeDisplayText(rawReply);
-      const textEl = document.createElement("div");
-      textEl.className = "msg-text";
-      textEl.textContent =
-        cleanText ||
+      const visibleText = sanitizeReply(rawReply);
+      const textDiv = document.createElement("div");
+      textDiv.className = "bubble-text";
+      textDiv.textContent =
+        visibleText ||
         (proposal?.proposal_type === "missing_info"
-          ? proposal.question || "يرجى تزويدي بالبيانات الناقصة لإتمام العملية."
-          : "تم تجهيز ملخص العملية للمراجعة.");
-      msg.appendChild(textEl);
+          ? proposal.question || "يرجى إكمال البيانات الناقصة."
+          : "تم تجهيز ملخص العملية.");
+      bubble.appendChild(textDiv);
 
-      // الحالة 1: بيانات ناقصة -> عرض حقول الإكمال فقط دون كود JSON
       if (proposal && proposal.proposal_type === "missing_info") {
-        const card = buildMissingInfoCard(proposal, sourcePrompt);
-        msg.appendChild(card);
+        bubble.appendChild(buildMissingCard(proposal, sourcePrompt));
+      } else if (proposal && proposal.payload) {
+        bubble.appendChild(buildProposalCard(proposal, sourcePrompt));
       }
 
-      // الحالة 2: عملية جاهزة -> عرض ملخص العمليات + زر التعديل + زر التنفيذ
-      if (proposal && proposal.proposal_type !== "missing_info" && proposal.payload) {
-        const card = buildExecutableProposalCard(proposal, sourcePrompt);
-        msg.appendChild(card);
-      }
-
-      chatBox.appendChild(msg);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      chatPanel.appendChild(bubble);
+      chatPanel.scrollTop = chatPanel.scrollHeight;
     }
 
-    function buildMissingInfoCard(proposal, sourcePrompt) {
-      const card = document.createElement("div");
-      card.className = "proposal-card";
+    function buildMissingCard(proposal, sourcePrompt) {
+      const box = document.createElement("div");
+      box.className = "card-box";
 
       const title = document.createElement("div");
-      title.className = "proposal-title";
-      title.textContent = "إكمال البيانات المطلوبة";
-      card.appendChild(title);
+      title.className = "card-title";
+      title.textContent = "إكمال البيانات الناقصة";
+      box.appendChild(title);
 
-      const fields = Array.isArray(proposal.missing_fields) && proposal.missing_fields.length > 0
-        ? proposal.missing_fields
-        : [{ key: "details", label: "البيانات المطلوبة", type: "text" }];
+      const fields =
+        Array.isArray(proposal.missing_fields) && proposal.missing_fields.length > 0
+          ? proposal.missing_fields
+          : [{ key: "details", label: "البيانات المطلوبة", type: "text" }];
 
-      const form = document.createElement("div");
-      form.className = "missing-form";
+      const grid = document.createElement("div");
+      grid.className = "form-grid";
+      const map = {};
 
-      const inputsMap = {};
-
-      for (const f of fields) {
-        const group = document.createElement("div");
-        group.className = "field-group";
+      fields.forEach((f) => {
+        const wrap = document.createElement("div");
+        wrap.className = "field";
 
         const lbl = document.createElement("label");
         lbl.textContent = f.label || f.key;
-        group.appendChild(lbl);
+        wrap.appendChild(lbl);
 
-        const input = createSmartFieldInput(f.key, f.type || "text");
-        inputsMap[f.key] = input;
-        group.appendChild(input);
-        form.appendChild(group);
-      }
+        const inp = document.createElement("input");
+        inp.type = f.type === "number" ? "number" : "text";
+        if (inp.type === "number") inp.step = "any";
+        map[f.key] = inp;
+        wrap.appendChild(inp);
+        grid.appendChild(wrap);
+      });
 
-      card.appendChild(form);
+      box.appendChild(grid);
 
-      const actions = document.createElement("div");
-      actions.className = "actions";
+      const row = document.createElement("div");
+      row.className = "btn-row";
 
-      const submitBtn = document.createElement("button");
-      submitBtn.type = "button";
-      submitBtn.className = "btn-primary";
-      submitBtn.textContent = "متابعة وتجهيز العملية";
-      submitBtn.onclick = () => {
-        const parts = [];
-        for (const f of fields) {
-          const val = (inputsMap[f.key]?.value || "").trim();
-          if (val) {
-            parts.push(`${f.label || f.key}: ${val}`);
-          }
-        }
-        if (parts.length === 0) {
-          appendSystemBanner("يرجى إدخال قيمة واحدة على الأقل.", false);
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-primary";
+      btn.textContent = "متابعة";
+      btn.onclick = () => {
+        const chunks = [];
+        fields.forEach((f) => {
+          const val = (map[f.key]?.value || "").trim();
+          if (val) chunks.push(`${f.label || f.key}: ${val}`);
+        });
+        if (!chunks.length) {
+          addBanner("يرجى إدخال قيمة واحدة على الأقل.", false);
           return;
         }
-        submitUserPrompt(parts.join(" ، "), sourcePrompt);
+        sendPrompt(chunks.join(" ، "), sourcePrompt);
       };
 
-      actions.appendChild(submitBtn);
-      card.appendChild(actions);
-      return card;
+      row.appendChild(btn);
+      box.appendChild(row);
+      return box;
     }
 
-    function createSmartFieldInput(key, type) {
-      const k = String(key || "").toLowerCase();
+    function buildProposalCard(proposal, sourcePrompt) {
+      const box = document.createElement("div");
+      box.className = "card-box";
 
-      if (k.includes("warehouse") && erpContext.warehouses?.length) {
-        const sel = document.createElement("select");
-        erpContext.warehouses.forEach((w) => {
-          const opt = document.createElement("option");
-          opt.value = w.name;
-          opt.textContent = `${w.name} (${w.code})`;
-          sel.appendChild(opt);
-        });
-        return sel;
-      }
-
-      if (k.includes("account") && erpContext.accounts?.length) {
-        const sel = document.createElement("select");
-        erpContext.accounts
-          .filter((a) => a.is_postable !== false)
-          .forEach((a) => {
-            const opt = document.createElement("option");
-            opt.value = a.name;
-            opt.textContent = `${a.name} (${a.code})`;
-            sel.appendChild(opt);
-          });
-        return sel;
-      }
-
-      const input = document.createElement("input");
-      input.type = type === "number" ? "number" : "text";
-      if (type === "number") {
-        input.step = "any";
-      }
-      return input;
-    }
-
-    function buildExecutableProposalCard(proposal, sourcePrompt) {
-      const card = document.createElement("div");
-      card.className = "proposal-card";
-
-      const typeLabels = {
+      const labels = {
         invoice: "فاتورة",
-        journal_entry: "قيد يومي محاسبي",
+        journal_entry: "قيد يومي",
         stock_movement: "حركة مخزنية",
         void_record: "إبطال سجل",
       };
 
       const title = document.createElement("div");
-      title.className = "proposal-title";
-      title.textContent = `${proposal.title || "عملية مقترحة"} (${typeLabels[proposal.proposal_type] || proposal.proposal_type})`;
-      card.appendChild(title);
+      title.className = "card-title";
+      title.textContent = `${proposal.title || "عملية مقترحة"} — ${labels[proposal.proposal_type] || proposal.proposal_type}`;
+      box.appendChild(title);
 
-      const summaryList = buildProposalSummaryList(proposal);
-      card.appendChild(summaryList);
+      box.appendChild(buildSummaryList(proposal));
 
-      const editPanel = document.createElement("div");
-      editPanel.className = "edit-panel";
-      editPanel.style.display = "none";
+      const editBox = document.createElement("div");
+      editBox.className = "edit-box";
+      editBox.style.display = "none";
 
-      const actions = document.createElement("div");
-      actions.className = "actions";
+      const row = document.createElement("div");
+      row.className = "btn-row";
 
       const editBtn = document.createElement("button");
       editBtn.type = "button";
-      editBtn.className = "btn-secondary";
+      editBtn.className = "btn-ghost";
       editBtn.textContent = "تعديل";
 
-      const executeBtn = document.createElement("button");
-      executeBtn.type = "button";
-      executeBtn.className = "btn-primary";
-      executeBtn.textContent = proposal.button_label || "تنفيذ العملية";
+      const execBtn = document.createElement("button");
+      execBtn.type = "button";
+      execBtn.className = "btn-primary";
+      execBtn.textContent = proposal.button_label || "تنفيذ العملية";
 
       editBtn.onclick = () => {
-        const isHidden = editPanel.style.display === "none";
-        if (isHidden) {
-          populateEditPanel(editPanel, proposal, sourcePrompt, () => {
-            // إعادة بناء البطاقة بعد التعديل الفوري
-            const freshCard = buildExecutableProposalCard(proposal, sourcePrompt);
-            card.replaceWith(freshCard);
+        if (editBox.style.display === "none") {
+          renderEditBox(editBox, proposal, sourcePrompt, () => {
+            box.replaceWith(buildProposalCard(proposal, sourcePrompt));
           });
-          editPanel.style.display = "block";
+          editBox.style.display = "block";
         } else {
-          editPanel.style.display = "none";
+          editBox.style.display = "none";
         }
       };
 
-      executeBtn.onclick = async () => {
-        executeBtn.disabled = true;
+      execBtn.onclick = async () => {
+        execBtn.disabled = true;
         editBtn.disabled = true;
         try {
-          const baseUrl = getWorkerBaseUrl();
-          const res = await fetch(`${baseUrl}/api/execute-proposal`, {
+          const base = getWorkerUrl();
+          const res = await fetch(`${base}/api/execute-proposal`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ proposal }),
           });
           const data = await res.json();
           if (!res.ok || !data.ok) {
-            appendSystemBanner(data.error || "فشل تنفيذ العملية.", false);
-            executeBtn.disabled = false;
+            addBanner(data.error || "فشل التنفيذ.", false);
+            execBtn.disabled = false;
             editBtn.disabled = false;
             return;
           }
-
-          appendSystemBanner("تم تنفيذ العملية وترحيلها في قاعدة البيانات بنجاح.", true);
-          executeBtn.textContent = "تم التنفيذ";
+          addBanner("تم تنفيذ العملية وترحيلها بنجاح.", true);
+          execBtn.textContent = "تم التنفيذ";
         } catch (err) {
-          appendSystemBanner(err.message || "حدث خطأ أثناء التنفيذ.", false);
-          executeBtn.disabled = false;
+          addBanner(err.message || "حدث خطأ أثناء التنفيذ.", false);
+          execBtn.disabled = false;
           editBtn.disabled = false;
         }
       };
 
-      actions.appendChild(editBtn);
-      actions.appendChild(executeBtn);
-
-      card.appendChild(actions);
-      card.appendChild(editPanel);
-
-      return card;
+      row.appendChild(editBtn);
+      row.appendChild(execBtn);
+      box.appendChild(row);
+      box.appendChild(editBox);
+      return box;
     }
 
-    function buildProposalSummaryList(proposal) {
+    function buildSummaryList(proposal) {
       const ul = document.createElement("ul");
       ul.className = "summary-list";
       const p = proposal.payload || {};
 
-      const addItem = (label, value) => {
-        if (value === undefined || value === null || value === "") return;
+      const addRow = (k, v) => {
+        if (v === undefined || v === null || v === "") return;
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${label}:</strong> ${escapeHtml(String(value))}`;
+        const strong = document.createElement("strong");
+        strong.textContent = `${k}: `;
+        li.appendChild(strong);
+        li.appendChild(document.createTextNode(String(v)));
         ul.appendChild(li);
       };
 
       if (proposal.proposal_type === "invoice") {
-        addItem("النوع", p.invoice_type === "sale" ? "مبيعات" : "مشتريات");
-        addItem("التاريخ", p.invoice_date);
-        addItem("المستودع", p.warehouse_code);
-        addItem("الطرف (مورد/عميل)", p.party_name);
-        addItem("حساب التسوية", p.settlement_account_code);
-        addItem("الحساب المقابل", p.offset_account_code);
-        addItem("العملة", p.currency);
-
-        if (Array.isArray(p.lines) && p.lines.length > 0) {
-          let subtotal = 0;
-          p.lines.forEach((l, idx) => {
+        addRow("النوع", p.invoice_type === "sale" ? "مبيعات" : "مشتريات");
+        addRow("التاريخ", p.invoice_date);
+        addRow("المستودع", p.warehouse_code);
+        addRow("الطرف", p.party_name);
+        addRow("حساب التسوية", p.settlement_account_code);
+        addRow("الحساب المقابل", p.offset_account_code);
+        addRow("العملة", p.currency);
+        if (Array.isArray(p.lines)) {
+          let sum = 0;
+          p.lines.forEach((l, i) => {
             const qty = Number(l.quantity || 0);
-            const price = Number(l.unit_price ?? l.unit_cost ?? 0);
-            const lineTotal = qty * price;
-            subtotal += lineTotal;
-            addItem(
-              `السطر ${idx + 1}`,
-              `صنف ${l.item_code} | كمية ${qty} ${l.unit_name || ""} × سعر ${price} = ${lineTotal}`
-            );
+            const prc = Number(l.unit_price ?? l.unit_cost ?? 0);
+            sum += qty * prc;
+            addRow(`السطر ${i + 1}`, `صنف ${l.item_code} | كمية ${qty} ${l.unit_name || ""} × ${prc} = ${qty * prc}`);
           });
           const net =
-            subtotal -
+            sum -
             Number(p.discount_amount || 0) +
             Number(p.tax_amount || 0) +
             Number(p.extra_expenses || 0);
-          addItem("الإجمالي التقديري", `${net} ${p.currency || ""}`);
+          addRow("الإجمالي", `${net} ${p.currency || ""}`);
         }
       } else if (proposal.proposal_type === "journal_entry") {
-        addItem("التاريخ", p.entry_date);
-        addItem("البيان", p.description);
-        addItem("العملة", p.currency);
-
+        addRow("التاريخ", p.entry_date);
+        addRow("البيان", p.description);
+        addRow("العملة", p.currency);
         if (Array.isArray(p.lines)) {
-          p.lines.forEach((l, idx) => {
-            addItem(
-              `سطر القيد ${idx + 1}`,
-              `حساب ${l.account_code} | مدين: ${Number(l.debit || 0)} | دائن: ${Number(l.credit || 0)}`
-            );
+          p.lines.forEach((l, i) => {
+            addRow(`سطر ${i + 1}`, `حساب ${l.account_code} | مدين: ${Number(l.debit || 0)} | دائن: ${Number(l.credit || 0)}`);
           });
         }
       } else if (proposal.proposal_type === "stock_movement") {
-        addItem("نوع الحركة", p.movement_type === "IN" ? "إدخال مخزني" : "إخراج مخزني");
-        addItem("التاريخ", p.movement_date);
-        addItem("المستودع", p.warehouse_code);
-        addItem("السبب", p.reason);
-
+        addRow("النوع", p.movement_type === "IN" ? "إدخال" : "إخراج");
+        addRow("التاريخ", p.movement_date);
+        addRow("المستودع", p.warehouse_code);
+        addRow("السبب", p.reason);
         if (Array.isArray(p.lines)) {
-          p.lines.forEach((l, idx) => {
-            addItem(
-              `سطر الحركة ${idx + 1}`,
-              `صنف ${l.item_code} | كمية ${l.quantity} ${l.unit_name || ""}`
-            );
+          p.lines.forEach((l, i) => {
+            addRow(`سطر ${i + 1}`, `صنف ${l.item_code} | كمية ${l.quantity} ${l.unit_name || ""}`);
           });
         }
       } else if (proposal.proposal_type === "void_record") {
-        addItem("نوع السجل", p.entity_type);
-        addItem("رقم السجل", p.record_id);
-        addItem("سبب الإبطال", p.void_reason);
+        addRow("نوع السجل", p.entity_type);
+        addRow("رقم السجل", p.record_id);
+        addRow("السبب", p.void_reason);
       }
 
       return ul;
     }
 
-    function populateEditPanel(panel, proposal, sourcePrompt, onSaved) {
-      panel.innerHTML = "";
+    function renderEditBox(box, proposal, sourcePrompt, onUpdated) {
+      box.innerHTML = "";
       const p = proposal.payload || {};
 
-      const heading = document.createElement("div");
-      heading.style.fontWeight = "700";
-      heading.textContent = "تعديل بيانات العملية قبل التنفيذ";
-      panel.appendChild(heading);
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = "تعديل البيانات";
+      box.appendChild(title);
 
       const grid = document.createElement("div");
-      grid.className = "edit-grid";
+      grid.className = "form-grid";
 
-      const editableScalarKeys = Object.keys(p).filter(
-        (k) => typeof p[k] !== "object" || p[k] === null
-      );
+      const keys = Object.keys(p).filter((k) => typeof p[k] !== "object" || p[k] === null);
+      const inputs = {};
 
-      const fieldInputs = {};
-      editableScalarKeys.forEach((key) => {
-        const group = document.createElement("div");
-        group.className = "field-group";
+      keys.forEach((k) => {
+        const wrap = document.createElement("div");
+        wrap.className = "field";
 
         const lbl = document.createElement("label");
-        lbl.textContent = key;
-        group.appendChild(lbl);
+        lbl.textContent = k;
+        wrap.appendChild(lbl);
 
         const inp = document.createElement("input");
-        inp.type = typeof p[key] === "number" ? "number" : "text";
+        inp.type = typeof p[k] === "number" ? "number" : "text";
         if (inp.type === "number") inp.step = "any";
-        inp.value = p[key] ?? "";
-        fieldInputs[key] = inp;
-
-        group.appendChild(inp);
-        grid.appendChild(group);
+        inp.value = p[k] ?? "";
+        inputs[k] = inp;
+        wrap.appendChild(inp);
+        grid.appendChild(wrap);
       });
 
-      panel.appendChild(grid);
+      box.appendChild(grid);
 
-      // تعديل مبسط للأسطر إن وُجدت
-      let linesEditor = null;
-      if (Array.isArray(p.lines)) {
-        const linesGroup = document.createElement("div");
-        linesGroup.className = "field-group";
-        linesGroup.style.marginTop = "10px";
+      const noteWrap = document.createElement("div");
+      noteWrap.className = "field";
+      noteWrap.style.marginTop = "10px";
 
-        const lLbl = document.createElement("label");
-        lLbl.textContent = "الأسطر (صيغة منظمة لكل سطر)";
-        linesGroup.appendChild(lLbl);
+      const noteLbl = document.createElement("label");
+      noteLbl.textContent = "أو اكتب تعديلك بكلمات بسيطة ليعيد المساعد صياغته:";
+      noteWrap.appendChild(noteLbl);
 
-        linesEditor = document.createElement("textarea");
-        linesEditor.rows = 4;
-        linesEditor.style.direction = "ltr";
-        linesEditor.style.textAlign = "left";
-        linesEditor.value = JSON.stringify(p.lines, null, 2);
-        linesGroup.appendChild(linesEditor);
-        panel.appendChild(linesGroup);
-      }
+      const noteInp = document.createElement("input");
+      noteInp.type = "text";
+      noteInp.placeholder = "مثال: غيّر الكمية إلى 50 أو اجعل الحساب الصندوق";
+      noteWrap.appendChild(noteInp);
+      box.appendChild(noteWrap);
 
-      // خيار إعادة الصياغة عبر المساعد بدلاً من التعديل اليدوي المباشر
-      const reaskGroup = document.createElement("div");
-      reaskGroup.className = "field-group";
-      reaskGroup.style.marginTop = "10px";
+      const row = document.createElement("div");
+      row.className = "btn-row";
 
-      const rLbl = document.createElement("label");
-      rLbl.textContent = "أو اكتب تعديلك بلغتك الطبيعية ليعيد المساعد صياغته:";
-      reaskGroup.appendChild(rLbl);
-
-      const reaskInput = document.createElement("input");
-      reaskInput.type = "text";
-      reaskInput.placeholder = "مثال: اجعل الكمية 150 بدلاً من 100 أو غيّر الحساب إلى الصندوق";
-      reaskGroup.appendChild(reaskInput);
-      panel.appendChild(reaskGroup);
-
-      const btnRow = document.createElement("div");
-      btnRow.className = "actions";
-
-      const saveDirectBtn = document.createElement("button");
-      saveDirectBtn.type = "button";
-      saveDirectBtn.className = "btn-primary";
-      saveDirectBtn.textContent = "حفظ التعديلات";
-      saveDirectBtn.onclick = () => {
-        for (const key of editableScalarKeys) {
-          const rawVal = fieldInputs[key].value;
-          if (rawVal === "") {
-            p[key] = null;
-          } else if (typeof p[key] === "number") {
-            p[key] = Number(rawVal);
-          } else {
-            p[key] = rawVal;
-          }
-        }
-
-        if (linesEditor) {
-          try {
-            const parsedLines = JSON.parse(linesEditor.value);
-            if (!Array.isArray(parsedLines)) {
-              throw new Error("الأسطر يجب أن تكون قائمة.");
-            }
-            p.lines = parsedLines;
-          } catch (e) {
-            appendSystemBanner("تنسيق الأسطر غير صحيح: " + e.message, false);
-            return;
-          }
-        }
-
-        onSaved();
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "btn-primary";
+      saveBtn.textContent = "حفظ التعديل";
+      saveBtn.onclick = () => {
+        keys.forEach((k) => {
+          const val = inputs[k].value;
+          if (val === "") p[k] = null;
+          else if (typeof p[k] === "number") p[k] = Number(val);
+          else p[k] = val;
+        });
+        onUpdated();
       };
 
-      const reaskBtn = document.createElement("button");
-      reaskBtn.type = "button";
-      reaskBtn.className = "btn-secondary";
-      reaskBtn.textContent = "إرسال التعديل للمساعد";
-      reaskBtn.onclick = () => {
-        const note = reaskInput.value.trim();
-        if (!note) {
-          appendSystemBanner("اكتب ملاحظة التعديل أولاً.", false);
+      const askBtn = document.createElement("button");
+      askBtn.type = "button";
+      askBtn.className = "btn-ghost";
+      askBtn.textContent = "إعادة الصياغة بالمساعد";
+      askBtn.onclick = () => {
+        const txt = noteInp.value.trim();
+        if (!txt) {
+          addBanner("اكتب ملاحظة التعديل أولاً.", false);
           return;
         }
-        submitUserPrompt(`تعديل على العملية السابقة: ${note}`, sourcePrompt);
+        sendPrompt(`تعديل: ${txt}`, sourcePrompt);
       };
 
-      const cancelBtn = document.createElement("button");
-      cancelBtn.type = "button";
-      cancelBtn.className = "btn-outline";
-      cancelBtn.textContent = "إلغاء";
-      cancelBtn.onclick = () => {
-        panel.style.display = "none";
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "btn-ghost";
+      closeBtn.textContent = "إغلاق";
+      closeBtn.onclick = () => {
+        box.style.display = "none";
       };
 
-      btnRow.appendChild(saveDirectBtn);
-      btnRow.appendChild(reaskBtn);
-      btnRow.appendChild(cancelBtn);
-      panel.appendChild(btnRow);
+      row.appendChild(saveBtn);
+      row.appendChild(askBtn);
+      row.appendChild(closeBtn);
+      box.appendChild(row);
     }
 
-    function escapeHtml(str) {
-      return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
-
-    promptForm.addEventListener("submit", (e) => {
+    composerForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const text = promptInput.value.trim();
-      if (!text) return;
-      promptInput.value = "";
-      submitUserPrompt(text);
+      const val = userInput.value.trim();
+      if (!val) return;
+      userInput.value = "";
+      sendPrompt(val);
     });
 
-    // تحميل السياق تلقائياً عند فتح الصفحة إذا كان الرابط مضبوطاً
     if (workerUrlInput.value.trim()) {
       loadContext();
     }
