@@ -3,48 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المساعد المحاسبي والمخزني - ERP</title>
+  <title>مساعد المحاسبة والمخزون - ERP</title>
   <style>
     :root[data-theme="light"] {
-      --bg-canvas: #eceff1;
-      --bg-surface: #f8fafc;
-      --bg-elevated: #ffffff;
-      --bg-subtle: #e2e8f0;
-      --bg-user: #d1d5db;
-      --text-main: #1f2937;
-      --text-muted: #4b5563;
-      --border-color: #cbd5e1;
-      --accent: #374151;
-      --accent-hover: #111827;
-      --accent-text: #ffffff;
-      --success-bg: #e5e7eb;
-      --success-border: #374151;
-      --success-text: #111827;
-      --error-bg: #f3f4f6;
-      --error-border: #6b7280;
-      --error-text: #1f2937;
-      --shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
+      --bg-app: #e5e7eb;
+      --bg-shell: #f9fafb;
+      --bg-card: #ffffff;
+      --bg-soft: #f3f4f6;
+      --bg-user: #374151;
+      --text-user: #ffffff;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --border: #d1d5db;
+      --btn-bg: #1f2937;
+      --btn-hover: #111827;
+      --btn-fg: #ffffff;
+      --pill-bg: #e5e7eb;
+      --pill-hover: #d1d5db;
+      --shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
     }
 
     :root[data-theme="dark"] {
-      --bg-canvas: #121417;
-      --bg-surface: #1b1e23;
-      --bg-elevated: #242830;
-      --bg-subtle: #2f3540;
-      --bg-user: #373d49;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --border-color: #374151;
-      --accent: #d1d5db;
-      --accent-hover: #ffffff;
-      --accent-text: #111827;
-      --success-bg: #262b34;
-      --success-border: #9ca3af;
-      --success-text: #f9fafb;
-      --error-bg: #22252b;
-      --error-border: #6b7280;
-      --error-text: #e5e7eb;
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      --bg-app: #0f1115;
+      --bg-shell: #171a20;
+      --bg-card: #20242c;
+      --bg-soft: #2a2f3a;
+      --bg-user: #4b5563;
+      --text-user: #ffffff;
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --border: #374151;
+      --btn-bg: #e5e7eb;
+      --btn-hover: #ffffff;
+      --btn-fg: #111827;
+      --pill-bg: #2a2f3a;
+      --pill-hover: #374151;
+      --shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
     }
 
     * {
@@ -54,28 +48,33 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-      background: var(--bg-canvas);
-      color: var(--text-main);
-      line-height: 1.65;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 18px 12px;
       transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    .top-card {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 18px 20px;
+    .shell {
+      width: 100%;
+      max-width: 920px;
+      background: var(--bg-shell);
+      border: 1px solid var(--border);
+      border-radius: 18px;
       box-shadow: var(--shadow);
-      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: calc(100vh - 36px);
+      min-height: 540px;
     }
 
-    .top-row {
+    .topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -83,121 +82,155 @@
       flex-wrap: wrap;
     }
 
-    .brand h1 {
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #6b7280;
+      flex-shrink: 0;
+    }
+
+    .status-dot.online {
+      background: #374151;
+      box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.25);
+    }
+
+    :root[data-theme="dark"] .status-dot.online {
+      background: #d1d5db;
+    }
+
+    .brand-title {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.08rem;
       font-weight: 700;
-      color: var(--text-main);
     }
 
-    .brand p {
-      margin: 4px 0 0;
-      font-size: 0.88rem;
-      color: var(--text-muted);
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
     }
 
-    .header-actions {
+    .topbar-controls {
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
-    .worker-row {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border-color);
+    .worker-strip {
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 18px;
       display: flex;
-      gap: 8px;
       align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
     }
 
-    .worker-row label {
-      font-size: 0.84rem;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    .worker-row input {
+    .worker-strip input {
       flex: 1;
       min-width: 240px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-main);
-      font-size: 0.88rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 0.84rem;
       direction: ltr;
       text-align: left;
     }
 
-    .chat-panel {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 18px;
-      min-height: 360px;
-      max-height: 60vh;
+    .messages {
+      flex: 1;
       overflow-y: auto;
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      box-shadow: var(--shadow);
-      margin-bottom: 14px;
+      gap: 14px;
+    }
+
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .msg-row.user {
+      align-items: flex-end;
+    }
+
+    .msg-row.assistant {
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .meta {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      padding: 0 4px;
     }
 
     .bubble {
-      padding: 13px 16px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-    }
-
-    .bubble.user {
-      background: var(--bg-user);
-      align-self: flex-start;
-      max-width: 90%;
-    }
-
-    .bubble.assistant {
-      background: var(--bg-surface);
-      align-self: stretch;
-    }
-
-    .bubble-text {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      line-height: 1.65;
+      font-size: 0.94rem;
       white-space: pre-line;
-      font-size: 0.95rem;
     }
 
-    .card-box {
-      margin-top: 12px;
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
+    .msg-row.user .bubble {
+      background: var(--bg-user);
+      color: var(--text-user);
+      border-color: transparent;
+      max-width: 82%;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-row.assistant .bubble {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      width: 100%;
+      border-bottom-right-radius: 4px;
+    }
+
+    .card {
+      margin-top: 10px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 14px;
     }
 
-    .card-title {
+    .card-head {
       font-weight: 700;
-      font-size: 0.98rem;
+      font-size: 0.94rem;
       margin-bottom: 8px;
-      color: var(--text-main);
+      color: var(--text-primary);
     }
 
-    .summary-list {
+    .summary {
       margin: 6px 0 12px;
-      padding-right: 20px;
-      font-size: 0.9rem;
-      color: var(--text-main);
+      padding-right: 18px;
+      font-size: 0.89rem;
     }
 
-    .summary-list li {
+    .summary li {
       margin-bottom: 4px;
     }
 
-    .form-grid {
+    .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
       gap: 10px;
       margin-top: 8px;
     }
@@ -209,32 +242,31 @@
     }
 
     .field label {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-secondary);
     }
 
     .field input,
-    .field select,
-    .field textarea {
+    .field select {
       padding: 8px 10px;
       border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-main);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    .edit-box {
+    .edit-area {
       margin-top: 12px;
       padding: 12px;
       border-radius: 10px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
     }
 
-    .btn-row {
+    .actions {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -243,9 +275,9 @@
 
     button {
       cursor: pointer;
-      border-radius: 8px;
-      padding: 8px 15px;
-      font-size: 0.9rem;
+      border-radius: 9px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
       font-weight: 600;
       font-family: inherit;
       border: 1px solid transparent;
@@ -253,106 +285,127 @@
     }
 
     button:disabled {
-      opacity: 0.55;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     .btn-primary {
-      background: var(--accent);
-      color: var(--accent-text);
+      background: var(--btn-bg);
+      color: var(--btn-fg);
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: var(--accent-hover);
+      background: var(--btn-hover);
     }
 
-    .btn-ghost {
-      background: var(--bg-subtle);
-      color: var(--text-main);
-      border-color: var(--border-color);
+    .btn-soft {
+      background: var(--pill-bg);
+      color: var(--text-primary);
+      border-color: var(--border);
     }
 
-    .banner {
+    .btn-soft:hover:not(:disabled) {
+      background: var(--pill-hover);
+    }
+
+    .notice {
       padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      border: 1px solid;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
     }
 
-    .banner.ok {
-      background: var(--success-bg);
-      border-color: var(--success-border);
-      color: var(--success-text);
+    .quick-prompts {
+      padding: 8px 18px 0;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      background: var(--bg-shell);
     }
 
-    .banner.err {
-      background: var(--error-bg);
-      border-color: var(--error-border);
-      color: var(--error-text);
+    .quick-chip {
+      font-size: 0.78rem;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--pill-bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .quick-chip:hover:not(:disabled) {
+      background: var(--pill-hover);
+      color: var(--text-primary);
     }
 
     .composer {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      padding: 12px 14px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 12px 18px 16px;
       display: flex;
       gap: 10px;
       align-items: flex-end;
-      box-shadow: var(--shadow);
     }
 
     .composer textarea {
       flex: 1;
-      min-height: 52px;
-      max-height: 150px;
+      min-height: 48px;
+      max-height: 140px;
       padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-main);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text-primary);
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.93rem;
       resize: vertical;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="top-card">
-      <div class="top-row">
-        <div class="brand">
-          <h1>المساعد المحاسبي والمخزني</h1>
-          <p>إدخال طبيعي للقيود والفواتير والحركات المخزنية مع التحقق والتنفيذ</p>
-        </div>
-        <div class="header-actions">
-          <button type="button" class="btn-ghost" id="themeToggleBtn">الوضع الليلي</button>
-          <button type="button" class="btn-ghost" id="refreshCtxBtn">تحديث البيانات</button>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand-wrap">
+        <span class="status-dot" id="statusDot"></span>
+        <div>
+          <h1 class="brand-title">المساعد المحاسبي والمخزني</h1>
+          <p class="brand-sub" id="statusText">جاهز لاستقبال أوامرك</p>
         </div>
       </div>
 
-      <div class="worker-row">
-        <label for="workerUrl">رابط Cloudflare Worker:</label>
-        <input
-          type="text"
-          id="workerUrl"
-          placeholder="https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev"
-        />
+      <div class="topbar-controls">
+        <button type="button" class="btn-soft" id="themeBtn">الوضع الليلي</button>
+        <button type="button" class="btn-soft" id="syncBtn">مزامنة القاعدة</button>
       </div>
-    </header>
+    </div>
 
-    <main class="chat-panel" id="chatPanel">
-      <div class="bubble assistant">
-        <div class="bubble-text">
-          أهلاً بك. اكتب العملية المحاسبية أو المخزنية أو الفاتورة بلغة عادية؛ سأطرح سؤالاً إذا كانت هناك بيانات ناقصة، أو أعرض لك ملخص العملية مع أزرار التعديل والتنفيذ.
-        </div>
+    <div class="worker-strip">
+      <label for="workerInput">رابط Worker:</label>
+      <input
+        type="text"
+        id="workerInput"
+        placeholder="https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev"
+      />
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg-row assistant">
+        <div class="meta">المساعد الذكي</div>
+        <div class="bubble">أهلاً بك. اكتب العملية المحاسبية أو المخزنية أو الفاتورة بلغة عادية؛ سأسألك عن أي معلومة ناقصة، أو أعرض لك ملخص العملية مع أزرار التعديل والتنفيذ.</div>
       </div>
-    </main>
+    </div>
 
-    <form class="composer" id="composerForm">
+    <div class="quick-prompts">
+      <button type="button" class="quick-chip" data-sample="سددنا 50000 من الصندوق لحساب الموردين">سداد لمورد من الصندوق</button>
+      <button type="button" class="quick-chip" data-sample="اشترينا 20 قطعة من المستودع الرئيسي">مثال فاتورة مشتريات</button>
+      <button type="button" class="quick-chip" data-sample="إخراج مخزني لـ 5 قطع من المستودع الرئيسي">مثال إخراج مخزني</button>
+    </div>
+
+    <form class="composer" id="composer">
       <textarea
-        id="userInput"
-        placeholder="اكتب طلبك هنا... مثال: اشترينا 100 قطعة بسعر 10 ليرات من مورد الأمل على الحساب للمستودع الرئيسي"
+        id="promptBox"
+        placeholder="اكتب طلبك هنا... واضغط Enter للإرسال (Shift+Enter لسطر جديد)"
         required
       ></textarea>
       <button type="submit" class="btn-primary" id="sendBtn">إرسال</button>
@@ -360,11 +413,11 @@
   </div>
 
   <script>
-    const THEME_KEY = "erp_ui_theme_v1";
-    const WORKER_KEY = "erp_worker_url_v1";
-    const DEFAULT_WORKER_URL = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
+    const THEME_STORAGE = "erp_theme_pref";
+    const WORKER_STORAGE = "erp_worker_endpoint";
+    const DEFAULT_WORKER = "https://workers-playground-broad-dawn-56ff.accessexpert2020.workers.dev";
 
-    let erpContext = {
+    let erpData = {
       accounts: [],
       warehouses: [],
       items: [],
@@ -373,45 +426,72 @@
       rates: [],
     };
 
-    const htmlRoot = document.documentElement;
-    const themeToggleBtn = document.getElementById("themeToggleBtn");
-    const refreshCtxBtn = document.getElementById("refreshCtxBtn");
-    const workerUrlInput = document.getElementById("workerUrl");
-    const chatPanel = document.getElementById("chatPanel");
-    const composerForm = document.getElementById("composerForm");
-    const userInput = document.getElementById("userInput");
+    const rootEl = document.documentElement;
+    const themeBtn = document.getElementById("themeBtn");
+    const syncBtn = document.getElementById("syncBtn");
+    const workerInput = document.getElementById("workerInput");
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+    const messagesEl = document.getElementById("messages");
+    const composer = document.getElementById("composer");
+    const promptBox = document.getElementById("promptBox");
     const sendBtn = document.getElementById("sendBtn");
 
-    function applyTheme(theme) {
-      const mode = theme === "dark" ? "dark" : "light";
-      htmlRoot.setAttribute("data-theme", mode);
-      localStorage.setItem(THEME_KEY, mode);
-      themeToggleBtn.textContent = mode === "dark" ? "الوضع النهاري" : "الوضع الليلي";
+    function setTheme(mode) {
+      const target = mode === "dark" ? "dark" : "light";
+      rootEl.setAttribute("data-theme", target);
+      localStorage.setItem(THEME_STORAGE, target);
+      themeBtn.textContent = target === "dark" ? "الوضع النهاري" : "الوضع الليلي";
     }
 
-    themeToggleBtn.addEventListener("click", () => {
-      const current = htmlRoot.getAttribute("data-theme");
-      applyTheme(current === "dark" ? "light" : "dark");
+    themeBtn.addEventListener("click", () => {
+      setTheme(rootEl.getAttribute("data-theme") === "dark" ? "light" : "dark");
     });
 
-    applyTheme(localStorage.getItem(THEME_KEY) || "light");
+    setTheme(localStorage.getItem(THEME_STORAGE) || "light");
 
-    workerUrlInput.value = localStorage.getItem(WORKER_KEY) || DEFAULT_WORKER_URL;
-    workerUrlInput.addEventListener("change", () => {
-      localStorage.setItem(WORKER_KEY, workerUrlInput.value.trim());
-      loadContext();
+    workerInput.value = localStorage.getItem(WORKER_STORAGE) || DEFAULT_WORKER;
+    workerInput.addEventListener("change", () => {
+      localStorage.setItem(WORKER_STORAGE, workerInput.value.trim());
+      syncContext();
     });
 
-    refreshCtxBtn.addEventListener("click", () => loadContext(true));
+    syncBtn.addEventListener("click", () => syncContext(true));
 
-    function getWorkerUrl() {
-      const raw = (workerUrlInput.value || "").trim().replace(/\/+$/, "");
-      if (!raw) throw new Error("يرجى إدخال رابط Cloudflare Worker.");
-      localStorage.setItem(WORKER_KEY, raw);
-      return raw;
+    document.querySelectorAll(".quick-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const sample = chip.getAttribute("data-sample") || "";
+        if (sample) sendMessage(sample);
+      });
+    });
+
+    promptBox.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const text = promptBox.value.trim();
+        if (text) {
+          promptBox.value = "";
+          sendMessage(text);
+        }
+      }
+    });
+
+    composer.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = promptBox.value.trim();
+      if (!text) return;
+      promptBox.value = "";
+      sendMessage(text);
+    });
+
+    function getWorkerEndpoint() {
+      const val = (workerInput.value || "").trim().replace(/\/+$/, "");
+      if (!val) throw new Error("يرجى إدخال رابط Cloudflare Worker.");
+      localStorage.setItem(WORKER_STORAGE, val);
+      return val;
     }
 
-    function sanitizeReply(text) {
+    function cleanDisplayText(text) {
       if (!text) return "";
       return text
         .replace(/```json[\s\S]*?```/gi, "")
@@ -420,112 +500,140 @@
         .trim();
     }
 
-    function addBanner(text, ok) {
-      const el = document.createElement("div");
-      el.className = `banner ${ok ? "ok" : "err"}`;
-      el.textContent = text;
-      chatPanel.appendChild(el);
-      chatPanel.scrollTop = chatPanel.scrollHeight;
+    function scrollBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addNotice(text) {
+      const div = document.createElement("div");
+      div.className = "notice";
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      scrollBottom();
     }
 
     function addUserBubble(text) {
-      const el = document.createElement("div");
-      el.className = "bubble user";
-      const body = document.createElement("div");
-      body.className = "bubble-text";
-      body.textContent = text;
-      el.appendChild(body);
-      chatPanel.appendChild(el);
-      chatPanel.scrollTop = chatPanel.scrollHeight;
+      const row = document.createElement("div");
+      row.className = "msg-row user";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "أنت";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      row.appendChild(meta);
+      row.appendChild(bubble);
+      messagesEl.appendChild(row);
+      scrollBottom();
     }
 
-    async function loadContext(notify = false) {
+    async function syncContext(showToast = false) {
       try {
-        const base = getWorkerUrl();
-        const res = await fetch(`${base}/api/context`);
+        const endpoint = getWorkerEndpoint();
+        const res = await fetch(`${endpoint}/api/context`);
         const data = await res.json();
         if (res.ok && data.ok && data.context) {
-          erpContext = data.context;
-          if (notify) addBanner("تم تحديث البيانات بنجاح.", true);
+          erpData = data.context;
+          statusDot.classList.add("online");
+          statusText.textContent = `متصل (${erpData.accounts.length} حساب نشط)`;
+          if (showToast) addNotice("تمت مزامنة البيانات المرجعية بنجاح.");
+        } else {
+          statusDot.classList.remove("online");
+          statusText.textContent = "تعذر الاتصال بالخادم";
+          if (showToast) addNotice(data.error || "تعذر مزامنة البيانات.");
         }
       } catch (err) {
-        if (notify) addBanner(err.message || "تعذر تحديث البيانات.", false);
+        statusDot.classList.remove("online");
+        statusText.textContent = "غير متصل";
+        if (showToast) addNotice(err.message || "تعذر الاتصال.");
       }
     }
 
-    async function sendPrompt(text, baseContextText = "") {
+    async function sendMessage(text, previousContextText = "") {
       const clean = (text || "").trim();
       if (!clean) return;
 
-      const combinedPrompt = baseContextText
-        ? `${baseContextText}\nاستكمال وتوضيح: ${clean}`
+      const fullPrompt = previousContextText
+        ? `${previousContextText}\nتوضيح وإكمال: ${clean}`
         : clean;
 
       addUserBubble(clean);
       sendBtn.disabled = true;
 
-      const pending = document.createElement("div");
-      pending.className = "bubble assistant";
-      pending.innerHTML = `<div class="bubble-text">جاري المعالجة...</div>`;
-      chatPanel.appendChild(pending);
-      chatPanel.scrollTop = chatPanel.scrollHeight;
+      const typingRow = document.createElement("div");
+      typingRow.className = "msg-row assistant";
+      typingRow.innerHTML = `<div class="meta">المساعد الذكي</div><div class="bubble">جاري التفكير وتجهيز الرد...</div>`;
+      messagesEl.appendChild(typingRow);
+      scrollBottom();
 
       try {
-        const base = getWorkerUrl();
-        const res = await fetch(`${base}/api/interpret`, {
+        const endpoint = getWorkerEndpoint();
+        const res = await fetch(`${endpoint}/api/interpret`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: combinedPrompt }),
+          body: JSON.stringify({ prompt: fullPrompt }),
         });
+
         const data = await res.json();
-        pending.remove();
+        typingRow.remove();
 
         if (!res.ok || !data.ok) {
-          addBanner(data.error || "حدث خطأ أثناء المعالجة.", false);
+          addNotice(data.error || "حدث خطأ أثناء معالجة الطلب.");
           return;
         }
 
-        renderAssistant(data.reply, data.proposal, combinedPrompt);
+        renderAssistantBubble(data.reply, data.proposal, fullPrompt);
       } catch (err) {
-        pending.remove();
-        addBanner(err.message || "تعذر الاتصال بالخادم.", false);
+        typingRow.remove();
+        addNotice(err.message || "تعذر الاتصال بالخادم.");
       } finally {
         sendBtn.disabled = false;
       }
     }
 
-    function renderAssistant(rawReply, proposal, sourcePrompt) {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble assistant";
+    function renderAssistantBubble(rawReply, proposal, sourcePrompt) {
+      const row = document.createElement("div");
+      row.className = "msg-row assistant";
 
-      const visibleText = sanitizeReply(rawReply);
-      const textDiv = document.createElement("div");
-      textDiv.className = "bubble-text";
-      textDiv.textContent =
-        visibleText ||
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = "المساعد الذكي";
+      row.appendChild(meta);
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+
+      const cleanText = cleanDisplayText(rawReply);
+      const textPart = document.createElement("div");
+      textPart.textContent =
+        cleanText ||
         (proposal?.proposal_type === "missing_info"
-          ? proposal.question || "يرجى إكمال البيانات الناقصة."
+          ? proposal.question || "يرجى تزويدي بالبيانات الناقصة."
           : "تم تجهيز ملخص العملية.");
-      bubble.appendChild(textDiv);
+      bubble.appendChild(textPart);
 
       if (proposal && proposal.proposal_type === "missing_info") {
-        bubble.appendChild(buildMissingCard(proposal, sourcePrompt));
+        bubble.appendChild(createMissingFieldsCard(proposal, sourcePrompt));
       } else if (proposal && proposal.payload) {
-        bubble.appendChild(buildProposalCard(proposal, sourcePrompt));
+        bubble.appendChild(createActionCard(proposal, sourcePrompt));
       }
 
-      chatPanel.appendChild(bubble);
-      chatPanel.scrollTop = chatPanel.scrollHeight;
+      row.appendChild(bubble);
+      messagesEl.appendChild(row);
+      scrollBottom();
     }
 
-    function buildMissingCard(proposal, sourcePrompt) {
-      const box = document.createElement("div");
-      box.className = "card-box";
+    function createMissingFieldsCard(proposal, sourcePrompt) {
+      const card = document.createElement("div");
+      card.className = "card";
 
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = "إكمال البيانات الناقصة";
-      box.appendChild(title);
+      const head = document.createElement("div");
+      head.className = "card-head";
+      head.textContent = "إكمال البيانات الناقصة";
+      card.appendChild(head);
 
       const fields =
         Array.isArray(proposal.missing_fields) && proposal.missing_fields.length > 0
@@ -533,8 +641,8 @@
           : [{ key: "details", label: "البيانات المطلوبة", type: "text" }];
 
       const grid = document.createElement("div");
-      grid.className = "form-grid";
-      const map = {};
+      grid.className = "grid";
+      const inputMap = {};
 
       fields.forEach((f) => {
         const wrap = document.createElement("div");
@@ -547,66 +655,66 @@
         const inp = document.createElement("input");
         inp.type = f.type === "number" ? "number" : "text";
         if (inp.type === "number") inp.step = "any";
-        map[f.key] = inp;
+        inputMap[f.key] = inp;
         wrap.appendChild(inp);
         grid.appendChild(wrap);
       });
 
-      box.appendChild(grid);
+      card.appendChild(grid);
 
-      const row = document.createElement("div");
-      row.className = "btn-row";
+      const actions = document.createElement("div");
+      actions.className = "actions";
 
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-primary";
-      btn.textContent = "متابعة";
-      btn.onclick = () => {
-        const chunks = [];
+      const goBtn = document.createElement("button");
+      goBtn.type = "button";
+      goBtn.className = "btn-primary";
+      goBtn.textContent = "إرسال البيانات";
+      goBtn.onclick = () => {
+        const pieces = [];
         fields.forEach((f) => {
-          const val = (map[f.key]?.value || "").trim();
-          if (val) chunks.push(`${f.label || f.key}: ${val}`);
+          const val = (inputMap[f.key]?.value || "").trim();
+          if (val) pieces.push(`${f.label || f.key}: ${val}`);
         });
-        if (!chunks.length) {
-          addBanner("يرجى إدخال قيمة واحدة على الأقل.", false);
+        if (!pieces.length) {
+          addNotice("يرجى إدخال قيمة واحدة على الأقل.");
           return;
         }
-        sendPrompt(chunks.join(" ، "), sourcePrompt);
+        sendMessage(pieces.join(" ، "), sourcePrompt);
       };
 
-      row.appendChild(btn);
-      box.appendChild(row);
-      return box;
+      actions.appendChild(goBtn);
+      card.appendChild(actions);
+      return card;
     }
 
-    function buildProposalCard(proposal, sourcePrompt) {
-      const box = document.createElement("div");
-      box.className = "card-box";
+    function createActionCard(proposal, sourcePrompt) {
+      const card = document.createElement("div");
+      card.className = "card";
 
-      const labels = {
+      const typeMap = {
         invoice: "فاتورة",
         journal_entry: "قيد يومي",
         stock_movement: "حركة مخزنية",
         void_record: "إبطال سجل",
       };
 
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = `${proposal.title || "عملية مقترحة"} — ${labels[proposal.proposal_type] || proposal.proposal_type}`;
-      box.appendChild(title);
+      const head = document.createElement("div");
+      head.className = "card-head";
+      head.textContent = `${proposal.title || "عملية جاهزة"} (${typeMap[proposal.proposal_type] || proposal.proposal_type})`;
+      card.appendChild(head);
 
-      box.appendChild(buildSummaryList(proposal));
+      card.appendChild(buildSummary(proposal));
 
-      const editBox = document.createElement("div");
-      editBox.className = "edit-box";
-      editBox.style.display = "none";
+      const editArea = document.createElement("div");
+      editArea.className = "edit-area";
+      editArea.style.display = "none";
 
-      const row = document.createElement("div");
-      row.className = "btn-row";
+      const actions = document.createElement("div");
+      actions.className = "actions";
 
       const editBtn = document.createElement("button");
       editBtn.type = "button";
-      editBtn.className = "btn-ghost";
+      editBtn.className = "btn-soft";
       editBtn.textContent = "تعديل";
 
       const execBtn = document.createElement("button");
@@ -615,13 +723,13 @@
       execBtn.textContent = proposal.button_label || "تنفيذ العملية";
 
       editBtn.onclick = () => {
-        if (editBox.style.display === "none") {
-          renderEditBox(editBox, proposal, sourcePrompt, () => {
-            box.replaceWith(buildProposalCard(proposal, sourcePrompt));
+        if (editArea.style.display === "none") {
+          buildEditArea(editArea, proposal, sourcePrompt, () => {
+            card.replaceWith(createActionCard(proposal, sourcePrompt));
           });
-          editBox.style.display = "block";
+          editArea.style.display = "block";
         } else {
-          editBox.style.display = "none";
+          editArea.style.display = "none";
         }
       };
 
@@ -629,117 +737,117 @@
         execBtn.disabled = true;
         editBtn.disabled = true;
         try {
-          const base = getWorkerUrl();
-          const res = await fetch(`${base}/api/execute-proposal`, {
+          const endpoint = getWorkerEndpoint();
+          const res = await fetch(`${endpoint}/api/execute-proposal`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ proposal }),
           });
           const data = await res.json();
           if (!res.ok || !data.ok) {
-            addBanner(data.error || "فشل التنفيذ.", false);
+            addNotice(data.error || "تعذر تنفيذ العملية.");
             execBtn.disabled = false;
             editBtn.disabled = false;
             return;
           }
-          addBanner("تم تنفيذ العملية وترحيلها بنجاح.", true);
+          addNotice("تم تنفيذ العملية وترحيلها بنجاح.");
           execBtn.textContent = "تم التنفيذ";
         } catch (err) {
-          addBanner(err.message || "حدث خطأ أثناء التنفيذ.", false);
+          addNotice(err.message || "حدث خطأ أثناء التنفيذ.");
           execBtn.disabled = false;
           editBtn.disabled = false;
         }
       };
 
-      row.appendChild(editBtn);
-      row.appendChild(execBtn);
-      box.appendChild(row);
-      box.appendChild(editBox);
-      return box;
+      actions.appendChild(editBtn);
+      actions.appendChild(execBtn);
+      card.appendChild(actions);
+      card.appendChild(editArea);
+      return card;
     }
 
-    function buildSummaryList(proposal) {
+    function buildSummary(proposal) {
       const ul = document.createElement("ul");
-      ul.className = "summary-list";
+      ul.className = "summary";
       const p = proposal.payload || {};
 
-      const addRow = (k, v) => {
-        if (v === undefined || v === null || v === "") return;
+      const addLine = (label, value) => {
+        if (value === undefined || value === null || value === "") return;
         const li = document.createElement("li");
-        const strong = document.createElement("strong");
-        strong.textContent = `${k}: `;
-        li.appendChild(strong);
-        li.appendChild(document.createTextNode(String(v)));
+        const b = document.createElement("strong");
+        b.textContent = `${label}: `;
+        li.appendChild(b);
+        li.appendChild(document.createTextNode(String(value)));
         ul.appendChild(li);
       };
 
       if (proposal.proposal_type === "invoice") {
-        addRow("النوع", p.invoice_type === "sale" ? "مبيعات" : "مشتريات");
-        addRow("التاريخ", p.invoice_date);
-        addRow("المستودع", p.warehouse_code);
-        addRow("الطرف", p.party_name);
-        addRow("حساب التسوية", p.settlement_account_code);
-        addRow("الحساب المقابل", p.offset_account_code);
-        addRow("العملة", p.currency);
+        addLine("النوع", p.invoice_type === "sale" ? "مبيعات" : "مشتريات");
+        addLine("التاريخ", p.invoice_date);
+        addLine("المستودع", p.warehouse_code);
+        addLine("الطرف", p.party_name);
+        addLine("حساب التسوية", p.settlement_account_code);
+        addLine("الحساب المقابل", p.offset_account_code);
+        addLine("العملة", p.currency);
         if (Array.isArray(p.lines)) {
-          let sum = 0;
-          p.lines.forEach((l, i) => {
+          let total = 0;
+          p.lines.forEach((l, idx) => {
             const qty = Number(l.quantity || 0);
             const prc = Number(l.unit_price ?? l.unit_cost ?? 0);
-            sum += qty * prc;
-            addRow(`السطر ${i + 1}`, `صنف ${l.item_code} | كمية ${qty} ${l.unit_name || ""} × ${prc} = ${qty * prc}`);
+            total += qty * prc;
+            addLine(`السطر ${idx + 1}`, `صنف ${l.item_code} | كمية ${qty} ${l.unit_name || ""} × ${prc} = ${qty * prc}`);
           });
           const net =
-            sum -
+            total -
             Number(p.discount_amount || 0) +
             Number(p.tax_amount || 0) +
             Number(p.extra_expenses || 0);
-          addRow("الإجمالي", `${net} ${p.currency || ""}`);
+          addLine("الإجمالي", `${net} ${p.currency || ""}`);
         }
       } else if (proposal.proposal_type === "journal_entry") {
-        addRow("التاريخ", p.entry_date);
-        addRow("البيان", p.description);
-        addRow("العملة", p.currency);
+        addLine("التاريخ", p.entry_date);
+        addLine("البيان", p.description);
+        addLine("العملة", p.currency);
         if (Array.isArray(p.lines)) {
-          p.lines.forEach((l, i) => {
-            addRow(`سطر ${i + 1}`, `حساب ${l.account_code} | مدين: ${Number(l.debit || 0)} | دائن: ${Number(l.credit || 0)}`);
+          p.lines.forEach((l, idx) => {
+            addLine(`سطر ${idx + 1}`, `حساب ${l.account_code} | مدين: ${Number(l.debit || 0)} | دائن: ${Number(l.credit || 0)}`);
           });
         }
       } else if (proposal.proposal_type === "stock_movement") {
-        addRow("النوع", p.movement_type === "IN" ? "إدخال" : "إخراج");
-        addRow("التاريخ", p.movement_date);
-        addRow("المستودع", p.warehouse_code);
-        addRow("السبب", p.reason);
+        addLine("النوع", p.movement_type === "IN" ? "إدخال" : "إخراج");
+        addLine("التاريخ", p.movement_date);
+        addLine("المستودع", p.warehouse_code);
+        addLine("السبب", p.reason);
         if (Array.isArray(p.lines)) {
-          p.lines.forEach((l, i) => {
-            addRow(`سطر ${i + 1}`, `صنف ${l.item_code} | كمية ${l.quantity} ${l.unit_name || ""}`);
+          p.lines.forEach((l, idx) => {
+            addLine(`سطر ${idx + 1}`, `صنف ${l.item_code} | كمية ${l.quantity} ${l.unit_name || ""}`);
           });
         }
       } else if (proposal.proposal_type === "void_record") {
-        addRow("نوع السجل", p.entity_type);
-        addRow("رقم السجل", p.record_id);
-        addRow("السبب", p.void_reason);
+        addLine("نوع السجل", p.entity_type);
+        addLine("رقم السجل", p.record_id);
+        addLine("السبب", p.void_reason);
       }
 
       return ul;
     }
 
-    function renderEditBox(box, proposal, sourcePrompt, onUpdated) {
-      box.innerHTML = "";
+    function buildEditArea(area, proposal, sourcePrompt, onDone) {
+      area.innerHTML = "";
       const p = proposal.payload || {};
 
       const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = "تعديل البيانات";
-      box.appendChild(title);
+      title.className = "card-head";
+      title.textContent = "تعديل بيانات العملية";
+      area.appendChild(title);
 
       const grid = document.createElement("div");
-      grid.className = "form-grid";
+      grid.className = "grid";
 
-      const keys = Object.keys(p).filter((k) => typeof p[k] !== "object" || p[k] === null);
+      const scalarKeys = Object.keys(p).filter((k) => typeof p[k] !== "object" || p[k] === null);
       const inputs = {};
 
-      keys.forEach((k) => {
+      scalarKeys.forEach((k) => {
         const wrap = document.createElement("div");
         wrap.className = "field";
 
@@ -756,76 +864,68 @@
         grid.appendChild(wrap);
       });
 
-      box.appendChild(grid);
+      area.appendChild(grid);
 
-      const noteWrap = document.createElement("div");
-      noteWrap.className = "field";
-      noteWrap.style.marginTop = "10px";
+      const rephraseWrap = document.createElement("div");
+      rephraseWrap.className = "field";
+      rephraseWrap.style.marginTop = "10px";
 
-      const noteLbl = document.createElement("label");
-      noteLbl.textContent = "أو اكتب تعديلك بكلمات بسيطة ليعيد المساعد صياغته:";
-      noteWrap.appendChild(noteLbl);
+      const rephraseLbl = document.createElement("label");
+      rephraseLbl.textContent = "أو اكتب تعديلك بكلمات عادية ليحدّثه المساعد:";
+      rephraseWrap.appendChild(rephraseLbl);
 
-      const noteInp = document.createElement("input");
-      noteInp.type = "text";
-      noteInp.placeholder = "مثال: غيّر الكمية إلى 50 أو اجعل الحساب الصندوق";
-      noteWrap.appendChild(noteInp);
-      box.appendChild(noteWrap);
+      const rephraseInp = document.createElement("input");
+      rephraseInp.type = "text";
+      rephraseInp.placeholder = "مثال: اجعل المبلغ 75000 أو غيّر الحساب إلى الصندوق";
+      rephraseWrap.appendChild(rephraseInp);
+      area.appendChild(rephraseWrap);
 
       const row = document.createElement("div");
-      row.className = "btn-row";
+      row.className = "actions";
 
       const saveBtn = document.createElement("button");
       saveBtn.type = "button";
       saveBtn.className = "btn-primary";
-      saveBtn.textContent = "حفظ التعديل";
+      saveBtn.textContent = "حفظ التعديلات";
       saveBtn.onclick = () => {
-        keys.forEach((k) => {
+        scalarKeys.forEach((k) => {
           const val = inputs[k].value;
           if (val === "") p[k] = null;
           else if (typeof p[k] === "number") p[k] = Number(val);
           else p[k] = val;
         });
-        onUpdated();
+        onDone();
       };
 
-      const askBtn = document.createElement("button");
-      askBtn.type = "button";
-      askBtn.className = "btn-ghost";
-      askBtn.textContent = "إعادة الصياغة بالمساعد";
-      askBtn.onclick = () => {
-        const txt = noteInp.value.trim();
-        if (!txt) {
-          addBanner("اكتب ملاحظة التعديل أولاً.", false);
+      const aiEditBtn = document.createElement("button");
+      aiEditBtn.type = "button";
+      aiEditBtn.className = "btn-soft";
+      aiEditBtn.textContent = "تعديل عبر المساعد";
+      aiEditBtn.onclick = () => {
+        const note = rephraseInp.value.trim();
+        if (!note) {
+          addNotice("اكتب ملاحظة التعديل أولاً.");
           return;
         }
-        sendPrompt(`تعديل: ${txt}`, sourcePrompt);
+        sendMessage(`تعديل: ${note}`, sourcePrompt);
       };
 
-      const closeBtn = document.createElement("button");
-      closeBtn.type = "button";
-      closeBtn.className = "btn-ghost";
-      closeBtn.textContent = "إغلاق";
-      closeBtn.onclick = () => {
-        box.style.display = "none";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn-soft";
+      cancelBtn.textContent = "إغلاق";
+      cancelBtn.onclick = () => {
+        area.style.display = "none";
       };
 
       row.appendChild(saveBtn);
-      row.appendChild(askBtn);
-      row.appendChild(closeBtn);
-      box.appendChild(row);
+      row.appendChild(aiEditBtn);
+      row.appendChild(cancelBtn);
+      area.appendChild(row);
     }
 
-    composerForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const val = userInput.value.trim();
-      if (!val) return;
-      userInput.value = "";
-      sendPrompt(val);
-    });
-
-    if (workerUrlInput.value.trim()) {
-      loadContext();
+    if (workerInput.value.trim()) {
+      syncContext();
     }
   </script>
 </body>
