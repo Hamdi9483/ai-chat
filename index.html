@@ -502,6 +502,28 @@ function renderProposalCard(assistantContentElement, proposal, sourcePrompt){
       <div><strong>رقم السجل:</strong> ${escapeHtml(String(p.record_id || ''))}</div>
       <div><strong>السبب:</strong> ${escapeHtml(p.void_reason || '')}</div>
     `;
+  } else if (proposal.proposal_type === 'create_account' || proposal.proposal_type === 'update_account') {
+    const isUpdate = proposal.proposal_type === 'update_account';
+    rowsHtml = `
+      <div><strong>رمز الحساب:</strong> ${escapeHtml(p.code || '')}</div>
+      <div><strong>الاسم ${isUpdate ? 'الجديد' : ''}:</strong> ${escapeHtml(p.name || '')}</div>
+      <div><strong>النوع:</strong> ${escapeHtml(p.type || '')} | <strong>الطبيعة:</strong> ${escapeHtml(p.normal || '')}</div>
+      ${p.description ? `<div><strong>الوصف:</strong> ${escapeHtml(p.description)}</div>` : ''}
+    `;
+  } else if (proposal.proposal_type === 'create_warehouse' || proposal.proposal_type === 'update_warehouse') {
+    const isUpdate = proposal.proposal_type === 'update_warehouse';
+    rowsHtml = `
+      <div><strong>رمز المستودع:</strong> ${escapeHtml(p.code || '')}</div>
+      <div><strong>الاسم ${isUpdate ? 'الجديد' : ''}:</strong> ${escapeHtml(p.name || '')}</div>
+      ${p.inventory_account_code ? `<div><strong>حساب المخزون:</strong> ${escapeHtml(p.inventory_account_code)}</div>` : ''}
+    `;
+  } else if (proposal.proposal_type === 'create_item' || proposal.proposal_type === 'update_item') {
+    const isUpdate = proposal.proposal_type === 'update_item';
+    rowsHtml = `
+      <div><strong>رمز المادة:</strong> ${escapeHtml(p.code || '')}</div>
+      <div><strong>الاسم ${isUpdate ? 'الجديد' : ''}:</strong> ${escapeHtml(p.name || '')}</div>
+      <div><strong>الوحدة الأساسية:</strong> ${escapeHtml(p.base_unit || '')}</div>
+    `;
   } else {
     return;
   }
