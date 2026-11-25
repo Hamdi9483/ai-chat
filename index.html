@@ -517,16 +517,50 @@ function renderProposalCard(assistantContentElement, proposal, sourcePrompt){
       <div><strong>الاسم ${isUpdate ? 'الجديد' : ''}:</strong> ${escapeHtml(p.name || '')}</div>
       ${p.inventory_account_code ? `<div><strong>حساب المخزون:</strong> ${escapeHtml(p.inventory_account_code)}</div>` : ''}
     `;
-  } else if (proposal.proposal_type === 'create_item' || proposal.proposal_type === 'update_item') {
-    const isUpdate = proposal.proposal_type === 'update_item';
+
+  } else if (proposal.proposal_type === 'update_item') {
     rowsHtml = `
       <div><strong>رمز المادة:</strong> ${escapeHtml(p.code || '')}</div>
-      <div><strong>الاسم ${isUpdate ? 'الجديد' : ''}:</strong> ${escapeHtml(p.name || '')}</div>
+      <div><strong>الاسم الجديد:</strong> ${escapeHtml(p.name || '')}</div>
       <div><strong>الوحدة الأساسية:</strong> ${escapeHtml(p.base_unit || '')}</div>
+    `;
+  } else if (proposal.proposal_type === 'create_item' || proposal.proposal_type === 'update_item_units') {
+    const units = Array.isArray(p.units) ? p.units : [];
+    const unitsTableHtml = units.length > 0 ? `
+      <div style="margin-top:10px">
+        <strong style="display:block;margin-bottom:6px;font-size:13px">الوحدات (${units.length}):</strong>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--bg2);border-radius:6px;overflow:hidden">
+          <thead>
+            <tr style="background:var(--bg3);border-bottom:1px solid var(--border)">
+              <th style="padding:8px;text-align:right;font-weight:700">اسم الوحدة</th>
+              <th style="padding:8px;text-align:right;font-weight:700">الباركود</th>
+              <th style="padding:8px;text-align:center;font-weight:700">معامل التحويل</th>
+              <th style="padding:8px;text-align:center;font-weight:700">أساسية</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${units.map(u => `
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:8px">${escapeHtml(u.unit_name || '')}</td>
+                <td style="padding:8px;font-family:monospace;font-size:11px;color:var(--dim)">${escapeHtml(u.barcode || '—')}</td>
+                <td style="padding:8px;text-align:center">${u.conversion_factor || 1}</td>
+                <td style="padding:8px;text-align:center">${u.is_base_unit ? '✓' : ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '';
+    rowsHtml = `
+      <div><strong>رمز المادة:</strong> ${escapeHtml(p.code || p.item_code || '')}</div>
+      ${p.name ? `<div><strong>الاسم:</strong> ${escapeHtml(p.name)}</div>` : ''}
+      ${p.base_unit ? `<div><strong>الوحدة الأساسية:</strong> ${escapeHtml(p.base_unit)}</div>` : ''}
+      ${unitsTableHtml}
     `;
   } else {
     return;
   }
+    
 
   proposalBox.innerHTML = `
     <div class="proposal-title">${escapeHtml(proposal.title || 'مقترح عملية جاهز للتنفيذ')}</div>
